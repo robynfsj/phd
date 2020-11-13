@@ -1,0 +1,15 @@
+Worksheet,Details
+depths,Depth of each sample in the core (m)
+mass,The amount of sediment used when creating the diatom slide (g).
+microspheres,The number of microspheres counted per sample.
+counts,"The number of each taxon counted per sample.
+P. ocellata not split up into size or ocelli number."
+p_oc_breakdown,"Breakdown of P. ocellata counts by size and ocelli number.
+For each variable, the first number is the number of ocelli. The range is the diameter (µm). U stands for undetermined and was assigned to valves that were too dissolved or broken to be assigned a size class."
+p_oc_pres,"Preservation of P. ocellata valves (counts of valves that were whole, dissolving or were so dissolved that only the centre remained)."
+f_index,Preservation of all valves (counts of all valves that were whole and all that were dissolved and/or fragmented).
+taxa,"A list of all the taxa counted in the samples and their lifestyle (planktonic, facultative planktonic, benthic)."
+NA,NA
+Non-diatom data,NA
+pollen,"Depth (m), arboreal pollen (%) and arboreal pollen minus Pinus and Juniperus (%). Note data is not the most up to data version as published in Roucoux et al. 2008."
+sedimentology,"Loss on ignition (LOI) data. Depth (m), LOI (%) and CO3(%)."
