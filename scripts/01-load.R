@@ -42,23 +42,15 @@ library(tools)
 # Create function that reads in a worksheet from an excel file then writes
 # it to csv.
 read_then_csv <- function(sheet, path) {
-  
-  # Isolate name of original excel file.
-  excel_file_name <- path %>%
-    basename() %>% # isolate file name
-    file_path_sans_ext() # remove file extension
-  
-  # Read sheet from excel file then write to csv file.
   path %>%
     read_excel(sheet = sheet) %>%
-    write_csv(paste0("data/csv/", excel_file_name, 
-                     "-", sheet, ".csv"))
+    write_csv(paste0("data/csv/imported-", sheet, ".csv"))
 }
 
 
 # Execute function and iterate over all worksheets in excel file.
 path <- "data/ioannina.xlsx"
-ioannina <- path %>%
+imported <- path %>%
   excel_sheets() %>%
   set_names() %>%
   map(read_then_csv, path = path)
