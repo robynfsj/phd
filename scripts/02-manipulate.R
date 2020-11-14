@@ -99,7 +99,7 @@ preservation <- list()
 
 
 
-# 2. P. ocellata splits ---------------------------------------------------
+# 3. P. ocellata splits ---------------------------------------------------
 
 # Counts of the taxon Pantocsekiella ocellata were split into different groups
 # according to their size and number of ocelli. These dataframes group the 
@@ -109,14 +109,14 @@ preservation <- list()
 
 
 
-# 2.1 Create df: all_splits ----
+# 3.1 Create df: all_splits ----
 # ——————————————————————————————
 p_ocellata$all_splits <- imported$p_oc_breakdown
 
 
 
 
-# 2.2 Create size split dfs ----
+# 3.2 Create size split dfs ----
 # ——————————————————————————————
 
 p_ocellata$size_split <- p_ocellata$all_splits %>%
@@ -149,7 +149,7 @@ p_ocellata$size_split_rel_ab_all <- p_ocellata$size_split %>%
 
 
 
-# 2.3 Create ocelli split dfs ----
+# 3.3 Create ocelli split dfs ----
 # ————————————————————————————————
 
 p_ocellata$ocelli_split <- p_ocellata$all_splits %>%
@@ -183,7 +183,7 @@ p_ocellata$ocelli_split_rel_ab_all <- p_ocellata$ocelli_split %>%
 
 
 
-# 2.4 Create df: split_20µm ----
+# 3.4 Create df: split_20µm ----
 # ——————————————————————————————
 
 p_ocellata$split_20µm <- p_ocellata$size_split %>%
@@ -197,7 +197,7 @@ p_ocellata$split_20µm <- p_ocellata$size_split %>%
 
 
 
-# 3. Taxa -----------------------------------------------------------------
+# 4. Taxa -----------------------------------------------------------------
 
 # The taxa dataframes contain the counts of the individual diatom taxa and 
 # counts grouped according to life mode. Two dataframes are created for the 
@@ -207,7 +207,7 @@ p_ocellata$split_20µm <- p_ocellata$size_split %>%
 
 
 
-# 3.1 Create taxa abundance dfs ----
+# 4.1 Create taxa abundance dfs ----
 # ——————————————————————————————————
 taxa$counts <- imported$counts
 
@@ -243,7 +243,7 @@ taxa$rel_ab_4_tidy <- inner_join(imported$depths, taxa$rel_ab_4) %>%
 
 
 
-# 3.2 Create taxa abundance dfs with P. ocellata 20µm split ----
+# 4.2 Create taxa abundance dfs with P. ocellata 20µm split ----
 # ———————————————————————————————————————————————————————————————
 # NOTE: Proper taxon names used for easy plotting later.
 
@@ -283,7 +283,7 @@ taxa$rel_ab_split_20µm_4_tidy <- inner_join(imported$depths,
 
 
 
-# 3.3 Create life mode dfs ----
+# 4.3 Create life mode dfs ----
 # —————————————————————————————
 
 # Create function that pulls the names of taxa with different life modes.
@@ -330,14 +330,14 @@ taxa$life_mode_rel_ab_tidy <- inner_join(imported$depths,
 
 
 
-# 4. Concentration --------------------------------------------------------
+# 5. Concentration --------------------------------------------------------
 
 # The concentration dataframes contain data on the diatom concentration in 
 # each sample. Zero values need to be left in as they indicate preservation was 
 # so bad that no diatoms were present.
 
 
-# 4.1 Set microsphere concentration ----
+# 5.1 Set microsphere concentration ----
 # ——————————————————————————————————————
 # Concentration of microspheres used to create slides.
 
@@ -346,7 +346,7 @@ micros_conc = 68100000
 
 
 
-# 4.1 Create df: measurements
+# 5.2 Create df: measurements ----
 # ————————————————————————————————
 
 concentration$measurements <- imported$mass %>% 
@@ -358,7 +358,7 @@ concentration$measurements <- imported$mass %>%
 
 
 
-# 4.2 Create df: concentration ----
+# 5.3 Create df: concentration ----
 # —————————————————————————————————
 
 concentration$calculated <- transmute(
@@ -376,7 +376,7 @@ rm(micros_conc)
 
 
 
-# 5. Preservation ---------------------------------------------------------
+# 6. Preservation ---------------------------------------------------------
 
 # Two ways of measuring preservation are investigated. The F index is the 
 # total number of whole valves as a proportion of all valves counted. The
@@ -387,7 +387,7 @@ rm(micros_conc)
 
 
 
-# 5.1 Create df: f_index ----
+# 6.1 Create df: f_index ----
 # ———————————————————————————
 # Missing samples need to be skipped so they remain as NA. Samples containing no 
 # diatoms should have an F index of 0 as they contain evidence that samples 
@@ -403,7 +403,7 @@ preservation$f_index <- imported$f_index %>%
 
 
 
-# 5.2 Create P. ocellata preservation dfs ----
+# 6.2 Create P. ocellata preservation dfs ----
 # ————————————————————————————————————————————
 # Replaces the raw count for each P. ocellata category with percentage 
 # abundance. Samples containing no diatoms need to be skipped.
