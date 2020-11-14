@@ -166,7 +166,6 @@ p_ocellata$ocelli_split <- p_ocellata$all_splits %>%
     o_u = rowSums(select(., starts_with("U")))
   )
 
-
 p_ocellata$ocelli_split_rel_ab <- p_ocellata$ocelli_split %>%
   mutate(
     sample_no = sample_no,
@@ -174,7 +173,6 @@ p_ocellata$ocelli_split_rel_ab <- p_ocellata$ocelli_split %>%
               method = "total",
               na.rm = "TRUE") * 100
   )
-
 
 p_ocellata$ocelli_split_rel_ab_all <- p_ocellata$ocelli_split %>%
   transmute(
