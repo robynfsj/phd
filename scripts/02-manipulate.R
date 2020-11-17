@@ -5,6 +5,7 @@
 # dataframes are created and are placed within lists for clarity. Resulting 
 # dataframes after running this script:
 #
+#
 # p_ocellata
 #   |
 #   ├ all_splits — diatom counts of the taxon P. ocellata split into size and
@@ -28,6 +29,7 @@
 #   |
 #   ├ size_split_20µm — counts of P. ocellata split into two size classes of
 #                       ≤20 µm and >20µm.
+#
 #
 # taxa
 #   |
@@ -59,11 +61,13 @@
 #   |
 #   ├ life_mode_rel_ab_tidy — life_mode_rel_ab in long form for ggplot
 #
+#
 # concentration
 #   |
 #   ├ measurments — data used to calculate diatom concentrations
 #   |
 #   ├ calculated — calculated diatom concentrations for each slide
+#
 #
 # preservation
 #   |
@@ -73,6 +77,7 @@
 #   |              pristine, dissolving or have only the centre remaining
 #   |
 #   ├ p_ocellata_tidy — p_ocellata in long form for ggplot
+
 
 
 
