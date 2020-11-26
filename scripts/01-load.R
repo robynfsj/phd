@@ -47,7 +47,6 @@ read_then_csv <- function(sheet, path) {
     write_csv(paste0("data/csv/imported-", sheet, ".csv"))
 }
 
-
 # Execute function and iterate over all worksheets in excel file.
 path <- "data/ioannina.xlsx"
 imported <- path %>%
