@@ -1,0 +1,791 @@
+---
+title: "Exploring zonation options"
+author: "Robyn Seymour-Jones"
+date: "26/11/2020"
+output: html_document
+knit: (function(input_file, encoding) {
+  out_dir <- '../docs';
+  rmarkdown::render(input_file,
+  encoding = encoding,
+  output_file = file.path(dirname(input_file), out_dir, 'exploring-zonation-options.html'))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+
+
+
+## 1. Introduction
+  
+I want to define diatom assemblage zones within the record so that it is easier 
+to describe and compare with other sequences. This sort of thing is usually done 
+by a constrained cluster analysis whereby stratigraphically adjacent samples are 
+grouped together based on the similarities of their diatom assemblage. The 
+specific cluster analysis chosen is the **Constrained Incremental Sum of Squares 
+(CONISS)** method as outlined by Grimm (1987).  
+  
+  
+  
+  
+### The CONISS algorithm  
+
+First, a matrix of dissimilarities between samples is computed. The CONISS 
+algorithm then computes a statistic known as the *sum of squares*\* between each 
+pair of adjacent samples (each sample can be considered a cluster of just one 
+sample at this stage). The pair with the smallest sum of squares is joined into 
+a cluster and then the sum of squares is recalculated for all samples with these
+newly joined samples recieving one sum of squares value for their cluster. The
+clusters with the smallest sum of squares is joined and the sum of squares
+recalulated. This process continues, clustering samples into successively
+larger groups (it is therefore an agglomerative technique).
+
+*\*The sum of squares is the squared difference between the value of a taxon in
+one sample of a cluster divided by the average value of that taxon across all
+samples in that cluster, which then summed for each taxon, which is then
+summed for each sample in the cluster.*
+  
+  
+  
+  
+### Decisions to make
+
+1. I need to decide what to do about one particular outlier sample. If it is not 
+good enough for the cluster analysis, I also need to decide if I am going to 
+remove it from all of the other analyses completely.
+
+2. Do I perform the cluster analysis with P. ocellata split into their size 
+classes as they will be displayed on the stratigraphical diagram or with them 
+just grouped as one taxon?
+
+3. Should I perform the cluster analysis on all of the taxa that were counted 
+or on only the abundant taxa?
+
+4. If I perform the cluster analysis on only the abundant taxa, should I choose 
+those present at 5 % or above in at least one sample as is done by Gordon and 
+Birks (1972) or 4 % to keep this analysis consistent with the other results on 
+my stratigraphic diagram?
+
+5. If I perform the cluster analysis on only the abundant taxa, should I base 
+the percentage abundance calculation on all taxa or only the abundant taxa? The
+latter is what is done by Gordon and Birks (1972).
+
+
+
+  
+### Purpose of this document
+  
+This document will display the results of various different cluster analyses to 
+help me answer the above questions. It also puts them all in one place for easy 
+reference at a later date.  
+  
+  
+  
+  
+### A twist in the tale  
+  
+To make matters even more complicated, I first performed a cluster analysis on 
+the diatom results using the Tilia program (Grimm, 2011). I have described the 
+results according to the zones that it produced. To avoid a massive amount of 
+repeat work, the final zonation resulting from the cluster analysis needs to be 
+as close as possible to the original cluster analysis results I obtained in 
+Tilia.
+
+
+
+
+********************************************************************************
+
+
+
+
+## 2. Set up
+
+The data are imported with the manipulate script. I will need the data frames in 
+the **taxa** list. I will also need the depths data frame in the **imported** 
+list.
+
+```{r message=FALSE}
+library(rioja) # chclust()
+library(ggdendro) # dendro_data()
+library(ggplot2)
+library(patchwork)
+source("scripts/02-manipulate.R")
+```
+
+
+
+
+********************************************************************************
+
+
+
+
+## 3. Data preparation method
+
+The data need to be prepared correctly prior to the cluster analysis. The 
+following steps are required.
+
+1. Samples containing no diatoms are removed.
+
+2. The analysis needs to be performed on relative abundance data, not on raw 
+counts. These must first be calculated and are done so differently in the 
+analyses in this document as I try to figure out if the proportion is out of all 
+diatoms counted or only out of abundant taxa. Although I use percentage relative 
+abundance for my other analyses and displaying results, the Tilia program 
+performs the cluster analysis on relative proportions out of 1.0 so the 
+percentage relative abundances are divided by 100 to transform them to unit 
+proportions (i.e. out of 1.0). This step is only necessary to keep the result 
+the same as the one I obtained from Tilia. If this step is not done, the 
+resulting dendrogram looks the same except the x-axis values are just 100 times 
+larger.
+
+3. The data are then square-root transformed. This step is necessary as the 
+record is dominated by one taxon (P. ocellata, particularly valves ≤20 µm). 
+Square-root transforming ensures the less abundant taxa play a more important 
+role in the cluster analysis than they would otherwise. My supervisor says this 
+is what you must always do and reading around the literature it does seem to be 
+standard practice for diatom abundance data.
+
+4. The squared Euclidean distance between samples is then calculated. This 
+dissimilarity index is used because it is the one that the Tilia program uses 
+and once again I am trying to match the results I previously obtained. Grimm (1987) 
+says that the combination of square-root transforming and then calculating the 
+squared Euclidean distance has proved "particularly satisfactory" for abundance 
+data. As researchers have been using Tilia for years to define zones in 
+ecological records, it is therefore also the distance that other researchers 
+have been using for the same purpose as me.
+
+
+
+
+********************************************************************************
+
+
+
+
+## 4. Addressing my questions
+
+### Tilia analysis
+
+This reproduces the cluster analysis that I performed in Tilia.
+
+```{r fig.height=9}
+# Prepare data
+dist_matrix_tilia <- taxa$rel_ab_split_20µm %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_tilia <- chclust(dist_matrix_tilia, method = "coniss")
+
+# Plot
+ddata_tilia <- dendro_data(clusters_tilia, type = "rectangle")
+
+tilia <- ggplot(segment(ddata_tilia)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse() +
+  labs(x = "Depth (m)",
+       y = "Total sum of squares") +
+  theme(aspect.ratio = 3) +
+  geom_hline(yintercept = 22)
+
+tilia +
+  labs(
+    title = "Tilia analysis",
+    subtitle = "(all taxa,\nP. ocellata 20 µm split,\noutlier still present)"
+    )
+```
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 1: Should I remove the outlier sample?
+
+Several samples in my record were so badly preserved that no diatoms were 
+counted. There were a handful of samples adjacent to these where preservation 
+was still poor but enough diatoms were present to count around 100 diatom valves. 
+Of these samples, all except one had a similar assemblage to those 
+stratigraphically adjacent to them so I deemed that although their preservation 
+was poor, they were probably representative of their environment. However, this 
+one sample in MIS 7d is very different to the others adjacent to it. It has the 
+lowest planktonic abundance of the whole record, whilst this might be what was 
+actually living in the lake at the time, it is also a possibility that the 
+preservation is so poor that it has skewed the assemblage to favour valves that 
+preserve better than others. I should probably remove it. But if I do, should I 
+remove the other samples where I was only able to count 100 diatoms or is my 
+argument that they are similar to their adjacent samples strong enough to keep 
+them in?
+
+
+
+
+#### Compare dendrograms
+
+```{r fig.height=9}
+# With outlier removed
+# ————————————————————
+
+# Prepare data
+dist_matrix_no_outlier <- taxa$rel_ab_split_20µm %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_no_outlier <- chclust(dist_matrix_no_outlier, method = "coniss")
+
+# Create plots
+ddata_no_outlier <- dendro_data(clusters_no_outlier, type = "rectangle")
+no_outlier <- ggplot(segment(ddata_no_outlier)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse() +
+  labs(x = "Depth (m)",
+       y = "Total sum of squares") +
+  theme(aspect.ratio = 3) +
+  geom_hline(yintercept = 22)
+
+
+# Plot dendrograms
+# ————————————————
+tilia + 
+  labs(
+    title = "Outlier still present",
+    subtitle = "(all taxa,\nP. ocellata 20 µm split,\noutlier still present)"
+  ) +
+no_outlier +
+  labs(
+    title = "Outlier removed",
+    subtitle = "(all taxa,\nP. ocellata 20 µm split,\noutlier removed)"
+  )
+```
+
+Removing the outlier has little effect on the rest of the dendrogram. I grouped 
+the outlier in with the samples above it in my original description so removing 
+the outlier in this situation would be best as it would mean I wouldn't have to 
+explain why I have grouped this single sample that should be in its own group in 
+with other samples.
+
+
+
+
+#### Compare broken stick
+
+```{r results="hide"}
+par(mfrow = c(1, 2))
+bstick(clusters_tilia, ng = 25)
+bstick(clusters_no_outlier, ng = 25)
+```
+
+The broken stick results are annoying as the observed sum of squares fluctuate 
+above and below the model at precisely the point at which I want them to go 
+below the model for the rest of the plot. Removing the outlier removes the 
+seventh point and shifts the remaining points to the left. This makes sense 
+because the outlier sample goes into a group on its own on the seventh split 
+from the right of the Tilia dendrogram with a total sum of squares of around 
+25.5. The broken stick with the outlier suggests there should be 7 or 11 zones 
+depending on when you think the observed sum of squares falls below the model. 
+The broken stick without the outlier suggests there should be 7 or 10 zones.
+
+
+
+
+#### *Decision: remove outlier*
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 2: Should I split *P. ocellata* for the cluster analysis?
+
+Due to the way the Tilia software works, I perfomed the cluster analysis in that 
+program on *P. ocellata* split into the 20 µm size classes (≤20 µm, >20 µm and 
+unclassifiable). The program required me to input the data with them split as 
+the primary function of that program is to plot the stratigraphic diagram. 
+However, thinking about this, I don't think it is a good idea to do the cluster 
+analysis with them split in this way. Mainly because it creates this artificial 
+group of unclassifiable valves (valves that were too dissolved or obscured by 
+sediment/other valves to assign a size class too). This artificial group could 
+end up influencing where the zone boundaries go and I wouldn't want that at all. 
+So here I am just checking that performing the cluster analysis with the valves 
+grouped won't affect the zone boundaries too much and cause me to rewrite my 
+results section.
+
+
+
+
+#### Compare dendrograms
+
+```{r fig.height=9}
+# With no P. ocellata split
+# —————————————————————————————
+
+# Prepare data
+dist_matrix_no_split <- taxa$rel_ab %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_no_split <- chclust(dist_matrix_no_split, method = "coniss")
+
+# Create plots
+ddata_no_split <- dendro_data(clusters_no_split, type = "rectangle")
+no_split <- ggplot(segment(ddata_no_split)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse() +
+  labs(x = "Depth (m)",
+       y = "Total sum of squares") +
+  theme(aspect.ratio = 3) +
+  geom_hline(yintercept = 21)
+
+
+# Plot dendrograms
+# ————————————————
+no_outlier + 
+  labs(
+    title = "P. ocellata 20 µm split",
+    subtitle = "(all taxa,\nP. ocellata 20 µm split,\noutlier removed)"
+  ) +
+no_split +
+  labs(
+    title = "No P. ocellata split",
+    subtitle = "(all taxa,\nno P. ocellata split,\noutlier removed)"
+    )
+
+```
+
+If I move the vertical line at which I am splitting the dendrogram into zones 
+(from total sum of square of 22 to 21), I can create the same zones as before. 
+The relationships between the zones change slightly but that doesn't matter for 
+what I am trying to do.
+
+
+
+
+#### Compare broken stick
+
+```{r}
+par(mfrow = c(1, 2))
+bstick(clusters_no_outlier, ng = 25)
+bstick(clusters_no_split, ng = 25)
+```
+
+It does have some effect on the number of zones that the broken stick model 
+suggests I should have. It suggests only 6 or 9 zones. Going on this information, 
+I probably split my record into too many zones when I did it with Tilia.
+
+
+
+
+#### *Decision: do not split P. ocellata*
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 3: Should the cluster analysis be performed on all or abundant taxa?
+
+Gordon and Birks (1972) suggest that the cluster analysis should only be run on 
+taxa present at ≥5 % in at least one sample as the low abundance taxa "are of 
+little numerical importance in biostratigraphy". Grimm (1987) eliminated those 
+present at "<3 % at every level", noting that the "elimitation of rare taxa has 
+little effect on the analysis". In the paper about determining the number of 
+zones to split a record into, Bennett (1996) also uses only the abundant taxa 
+present at >5 % in at least one sample, stating that "Birks & Berglund (1979) and 
+Birks (1986) recommended that data sets for numerical zonation should only 
+contain those taxa with proportions that exceed 5 %". Bennett (1996) then goes 
+on to assess the effect of lowering and increasing the threshold for taxa 
+inclusion. Lowering the threshold slight increases the number of zones 
+recognised, raising the threshold to 10 % or 20 % changes the location of zone 
+markers to positions that suit the remaining taxa. It's interesting to note here 
+that using the CONISS method, the analysis in Bennett (1996) identified 6 zones 
+with the threshold set at 0-5 %, 1 %, 2 % or 5 %, and identified 5 zones with 
+the threshold set at 10 % or 20 % — a difference of only one zone.
+
+Investigating those references provided by Bennett (1996), Birks (1986, pg 757) 
+gives the following reason for including on abundance taxa:  
+
+>"Experience with many data sets has shown that pollen types with values less 
+than 5 % are of minor *numerical* importance and exert little influence on the 
+zonation results. Such rare types have a high relative error associated with 
+their pollen counts (Maher, 1972; Faegri and Iversen, 1975) and are thus poorly 
+estimated numerically unless very large pollen sums are counted. Such types may, 
+of course, be of very considerable *ecological* importance as 'indicator species' 
+in the interpretation of the data in terms of past flora, vegetation and 
+environment (e.g. Iversenm, 1944, 1954; Birks, 1973, 1976)."
+
+Obviously the work cited so far is quite old so I have looked around to see if 
+there has been any progression on this. Birks (2012) states that the basic 
+principles "remain largely unchanged" since they were established in Gordon and 
+Birks (1972) and Birks and Gordon (1985).
+
+Having read all of this, my conclusion is that I should be running the cluster 
+analysis on only abundant taxa. Although running it on all taxa would have 
+little impact on the resulting zonation, their inclusion could cause slight 
+alterations. These might not be desirable as the data they are based on might 
+not be an accurate representation of the population. The abundances of some rare 
+taxa could be due to the sampling.
+
+
+
+
+#### Compare dendrograms
+
+```{r fig.height=9}
+
+# On taxa present at ≥4%
+# ——————————————————————
+
+# Prepare data
+dist_matrix_ab_taxa <- taxa$rel_ab_4 %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_ab_taxa <- chclust(dist_matrix_ab_taxa, method = "coniss")
+
+# Create plots
+ddata_ab_taxa <- dendro_data(clusters_ab_taxa, type = "rectangle")
+ab_taxa <- ggplot(segment(ddata_ab_taxa)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse() +
+  labs(x = "Depth (m)",
+       y = "Total sum of squares") +
+  theme(aspect.ratio = 3)
+
+
+# Plot dendrograms
+# ————————————————
+no_split +
+  labs(
+    title = "All taxa",
+    subtitle = "(all taxa,\nno P. ocellata split,\noutlier removed)"
+    ) +
+ab_taxa +
+  labs(
+    title = "Abundant taxa only",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+    ) +
+    geom_hline(yintercept = 12.5)
+```
+
+Performing the analysis on abundant taxa only does change the dendrogram quite a 
+bit but mostly at the smaller splits. The zones can actually remain the same 
+except for zones 2/3 (where some samples in the original zone 2 are moved 
+into zone 3) and zones 11/12 (where some samples in the original zone 11 are 
+moved into zone 12).
+
+
+
+
+#### Compare broken stick
+
+```{r}
+par(mfrow = c(1, 2))
+bstick(clusters_no_split, ng = 25)
+bstick(clusters_ab_taxa, ng = 25)
+```
+
+The broken stick is a bit different here too. It becomes even more difficult to 
+interpret with multiple fluctuations of the observed sum of squares above and 
+below the model. It identifies between 7 and 11 zones.
+
+
+
+
+#### Reassess zones
+
+```{r fig.height=9}
+ab_taxa +
+  labs(
+    title = "7 zones",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+    ) +
+  geom_hline(yintercept = 15) +
+ab_taxa +
+  labs(
+    title = "11 zones",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+  ) + 
+  geom_hline(yintercept = 13.2)
+```
+
+Forming 7 or 11 zones is actually quite difficult as for both there is only a 
+very narrow area within which the straight line can be placed in order to split 
+into those groups. 11 zones is clearly more similar to the original splits that 
+I made on the dendrogram created with Tilia.
+
+
+
+
+#### *Decision: use only abundant taxa*
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 4: Should abundant taxa be those at ≥ 4 % or ≥ 5 %?
+
+Gordon and Birks (1972) include taxa present at ≥5 % in at least one sample. As 
+I am including taxa present at ≥4 % in at least one sample in my stratigraphic 
+diagram, I thought it would be best that everything is consistent. I choose ≥4 % 
+as this meant that *Asterionella formosa* was still included on the diagram, 
+which could be very useful in interpretations. Displaying taxa present at ≥5 % 
+meant this taxon was no longer displayed. The resulting stratigraphic diagram 
+also displayed well when taxa present at ≥4 % were kept.
+
+As I mentioned under my introduction paragraph of decision 3, Bennett (1996) 
+explores the effect that changing the threshold for taxa inclusion has on the 
+zonation and found there to be little effect. 
+
+
+
+
+#### Compare dendrograms
+
+```{r fig.height=9}
+
+# On taxa present at ≥5 %
+# ———————————————————————
+
+# Prepare data
+taxa$rel_ab_5 <- taxa$rel_ab %>%
+  transmute(
+    sample_no = sample_no,
+    select(., all_of(abundant_taxa(., 5)))
+  )
+
+dist_matrix_ab_taxa_5 <- taxa$rel_ab_5 %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_ab_taxa_5 <- chclust(dist_matrix_ab_taxa_5, method = "coniss")
+
+# Create plots
+ddata_ab_taxa_5 <- dendro_data(clusters_ab_taxa_5, type = "rectangle")
+ab_taxa_5 <- ggplot(segment(ddata_ab_taxa_5)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse() +
+  labs(x = "Depth (m)",
+       y = "Total sum of squares") +
+  theme(aspect.ratio = 3)
+
+
+# Plot dendrograms
+ab_taxa +
+  labs(
+    title = "≥4 %",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+  ) +
+  geom_hline(yintercept = 12.5) +
+ab_taxa_5 +
+  labs(
+    title = "≥5 %",
+    subtitle = "(taxa ≥5 %,\nno P. ocellata split\noutlier removed)"
+  ) +
+  geom_hline(yintercept = 11.5)
+```
+
+The resulting dendrograms are very similar. For the ≥5 % dendrogram, a shift of 
+the verical line to the left results in the same zonation as for ≥4 % except for 
+one sample in zone 11 of ≥4 %, which finds itself in zone 12 of ≥5 %.
+
+
+
+
+#### Compare broken stick
+
+```{r}
+par(mfrow = c(1, 2))
+bstick(clusters_ab_taxa, ng = 25)
+bstick(clusters_ab_taxa_5, ng = 25)
+```
+
+The broken stick is very similar for both. It is difficult to make out if it is 
+after the 11th or 12th split that the observed sum of squares drops below the 
+modelled sum of squares. Even a closer look shows it is very close:
+
+```{r}
+bstick(clusters_ab_taxa_5, ng = 25)
+```
+
+
+
+
+#### *Decision: stick with ≥4 %*
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 5: Should the % abundance be based on a sum of all taxa or abundant taxa?
+
+My instinct was to calculate percentage abundances of a taxon out of all taxa 
+that were counted in a sample. I didn't even think of doing it another way until 
+I read that Gordon & Birks (1972) calculated their percentages out of only the 
+abundant taxa that they were using in their CONISS analysis. Every single paper 
+I have come across has used their method, calculating percentage abundance of 
+taxa based only on abundant taxa. I have therefore done the same throughout this 
+document. This should have been the first question I addressed but there was no 
+need to show the differences that occur in the dendrograms because of this as I 
+would never have considered doing it the way I had originally thought because it 
+is not the done thing. 
+
+I am struggling with why this would be done but will have a go at guessing why — 
+the taxa present at such low abundances are not statistically viable because 
+they are potentially only there as a result of sampling chance. It could have 
+been a fluke that a valve of a rare taxon fell on the part of the slide I was 
+looking at rather than one of the more abundant taxa. Thus, the counts for the 
+abundant taxa appear lower than they should have been. Or this might not be the 
+case and the occurence of that rare taxon valve is representative of the original 
+population. Either way there is an element of doubt due to such low counts 
+(sometimes only one or two valves) that it statistically more robust to remove 
+them.
+
+
+
+
+#### *Decision: base percentage calculations on sum of only abundant taxa*
+
+
+
+
+
+********************************************************************************
+
+
+
+
+## 5. Conclusion
+
+After addressing all of my questions, this is the resulting CONISS analysis and 
+zonation scheme that I have decided upon.
+
+```{r fig.height=9}
+ab_taxa +
+  labs(
+    title = "Final dendrogram",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+  ) +
+  geom_hline(yintercept = 13.1)
+```
+
+```{r fig.height=9}
+bstick(clusters_ab_taxa, ng = 25)
+```
+
+
+
+
+
+********************************************************************************
+
+
+
+
+## References
+
+Bennett, K. D. (1996) Determination of the number of zones in a 
+biostratigraphical sequence. *New Phytologist*, 132, 155–170.
+
+Birks, H. J. B. (1986) Numerical zonation, comparison and correlation of 
+Quaternary pollen-stratigraphical data. In Berglund, B. E. (ed) 
+*Handbook of Palaeoecology and Palaeohydrology*. Chichester: John Wiley & Sons.
+
+Birks, H. J. B. (2012) Analysis of stratigraphical data. In Birks, H. J. B., 
+Lotter, A. F., Juggins, S. & Smol, J. P. (eds) *Tracking Environmental Change* 
+*using Lake Sediments. Volume 5: Data Handling and Numerical Techniques*. 
+Dordrecht: Springer.
+
+Birks, H. J. B. & Berglund, B. E. (1979) Holocene pollen stratigraphy of southern 
+Sweden: a reappraisal using numerical methods. *Boreas*, 8, 257–279.
+
+Birks, H. J. B. & Gordon, A. D. (1985) *Numerical methods in Quaternary pollen analysis*. 
+London: Academic Press.
+
+Gordon, A. D. & Birks, H. J. B. (1972) Numerical methods in Quaternary 
+palaeoecology. I. Zonation of pollen diagrams. *New Phytologist*, 71, 961–979.  
+
+Grimm, E. C. (1987) CONISS: A Fortran 77 program for stratigraphically 
+constrained cluster analysis by the method of incremental sum of squares. 
+*Computers & Geosciences*, 13, 13–35.
+
+Grimm, E. C. (2011) *Tilia version 1.7.16* [Software]. Illinois State Museum, Springfield.
