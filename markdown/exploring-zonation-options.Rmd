@@ -2,7 +2,12 @@
 title: "Exploring zonation options"
 author: "Robyn Seymour-Jones"
 date: "26/11/2020"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: lumen
 knit: (function(input_file, encoding) {
   out_dir <- '../docs';
   rmarkdown::render(input_file,
@@ -102,9 +107,9 @@ Tilia.
 
 ## 2. Set up
 
-The data are imported with the manipulate script. I will need the data frames in 
-the **taxa** list. I will also need the depths data frame in the **imported** 
-list.
+The data are imported with the [manipulate script](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R). 
+I will need the data frames in the **taxa** list. I will also need the depths 
+data frame in the **imported** list.
 
 ```{r message=FALSE}
 library(rioja) # chclust()
@@ -167,7 +172,7 @@ have been using for the same purpose as me.
 
 ## 4. Addressing my questions
 
-### Tilia analysis
+### My original Tilia analysis
 
 This reproduces the cluster analysis that I performed in Tilia.
 
