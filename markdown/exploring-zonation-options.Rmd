@@ -29,7 +29,7 @@ to describe and compare with other sequences. This sort of thing is usually done
 by a constrained cluster analysis whereby stratigraphically adjacent samples are 
 grouped together based on the similarities of their diatom assemblage. The 
 specific cluster analysis chosen is the **Constrained Incremental Sum of Squares 
-(CONISS)** method as outlined by Grimm (1987).  
+(CONISS)** method as outlined by [Grimm (1987)](#references).  
   
   
   
@@ -60,7 +60,7 @@ summed for each sample in the cluster.*
 good enough for the cluster analysis, I also need to decide if I am going to 
 remove it from all of the other analyses completely.
 
-2. Do I perform the cluster analysis with P. ocellata split into their size 
+2. Do I perform the cluster analysis with *P. ocellata* split into their size 
 classes as they will be displayed on the stratigraphical diagram or with them 
 just grouped as one taxon?
 
@@ -68,13 +68,13 @@ just grouped as one taxon?
 or on only the abundant taxa?
 
 4. If I perform the cluster analysis on only the abundant taxa, should I choose 
-those present at 5 % or above in at least one sample as is done by Gordon and 
-Birks (1972) or 4 % to keep this analysis consistent with the other results on 
-my stratigraphic diagram?
+those present at 5 % or above in at least one sample as is done by 
+[Gordon and Birks (1972)](#references) or 4 % to keep this analysis consistent 
+with the other results on my stratigraphic diagram?
 
 5. If I perform the cluster analysis on only the abundant taxa, should I base 
 the percentage abundance calculation on all taxa or only the abundant taxa? The
-latter is what is done by Gordon and Birks (1972).
+latter is what is done by [Gordon and Birks (1972)](#references).
 
 
 
@@ -91,11 +91,11 @@ reference at a later date.
 ### A twist in the tale  
   
 To make matters even more complicated, I first performed a cluster analysis on 
-the diatom results using the Tilia program (Grimm, 2011). I have described the 
-results according to the zones that it produced. To avoid a massive amount of 
-repeat work, the final zonation resulting from the cluster analysis needs to be 
-as close as possible to the original cluster analysis results I obtained in 
-Tilia.
+the diatom results using the Tilia program [(Grimm, 2011)](#references). I have 
+described the results according to the zones that it produced. To avoid a 
+massive amount of repeat work, the final zonation resulting from the cluster 
+analysis needs to be as close as possible to the original cluster analysis 
+results I obtained in Tilia.
 
 
 
@@ -107,7 +107,8 @@ Tilia.
 
 ## 2. Set up
 
-The data are imported with the [manipulate script](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R). 
+The data are imported with the 
+[manipulate script](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R). 
 I will need the data frames in the **taxa** list. I will also need the depths 
 data frame in the **imported** list.
 
@@ -174,7 +175,8 @@ have been using for the same purpose as me.
 
 ### My original Tilia analysis
 
-This reproduces the cluster analysis that I performed in Tilia.
+This reproduces the cluster analysis that I performed in Tilia and plots the 
+results as a dendrogram.
 
 ```{r fig.height=9}
 # Prepare data
@@ -198,11 +200,14 @@ ddata_tilia <- dendro_data(clusters_tilia, type = "rectangle")
 tilia <- ggplot(segment(ddata_tilia)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_x_reverse() +
-  labs(x = "Depth (m)",
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
        y = "Total sum of squares") +
+  theme_minimal() +
   theme(aspect.ratio = 3) +
-  geom_hline(yintercept = 22)
+  geom_hline(yintercept = 22.1,
+             linetype = 2)
 
 tilia +
   labs(
@@ -210,6 +215,27 @@ tilia +
     subtitle = "(all taxa,\nP. ocellata 20 µm split,\noutlier still present)"
     )
 ```
+
+
+
+
+#### Reading the dendrogram
+
+Each sample of the core is represented on the dendrogram. It is easy to identify 
+each sample — each one is a horizontal line on the dendrogram originating from 
+the left hand side of the plot. Each sample joins another adjacent cluster or 
+sample at a certain total sum of squares value along the x-axis. The smaller 
+the total sum of squares at which the clusters/samples join together, the more 
+similar they are. Note that for the purposes of this document, the samples just 
+appear in sequential order and are not plotted by depth. This is proving very 
+difficult to do so is something I will work on next.
+
+By placing the vertical dashed line through the dendrogram, each horizonal line 
+that it crosses is designated as a zone. All the samples on the left that 
+eventually cluster into that horizontal line are part of that zone. In this 
+example, 13 zones have been created. When I did this originally, I ignored one 
+zone as it contained only one sample and I was thinking this might be an outlier 
+anyway. I also created some subzones.
 
 
 
@@ -269,11 +295,14 @@ ddata_no_outlier <- dendro_data(clusters_no_outlier, type = "rectangle")
 no_outlier <- ggplot(segment(ddata_no_outlier)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_x_reverse() +
-  labs(x = "Depth (m)",
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
        y = "Total sum of squares") +
+  theme_minimal() +
   theme(aspect.ratio = 3) +
-  geom_hline(yintercept = 22)
+  geom_hline(yintercept = 22,
+             linetype = 2)
 
 
 # Plot dendrograms
@@ -378,11 +407,14 @@ ddata_no_split <- dendro_data(clusters_no_split, type = "rectangle")
 no_split <- ggplot(segment(ddata_no_split)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_x_reverse() +
-  labs(x = "Depth (m)",
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
        y = "Total sum of squares") +
+  theme_minimal() +
   theme(aspect.ratio = 3) +
-  geom_hline(yintercept = 21)
+  geom_hline(yintercept = 21,
+             linetype = 2)
 
 
 # Plot dendrograms
@@ -435,25 +467,28 @@ I probably split my record into too many zones when I did it with Tilia.
 
 ### Decision 3: Should the cluster analysis be performed on all or abundant taxa?
 
-Gordon and Birks (1972) suggest that the cluster analysis should only be run on 
-taxa present at ≥5 % in at least one sample as the low abundance taxa "are of 
-little numerical importance in biostratigraphy". Grimm (1987) eliminated those 
-present at "<3 % at every level", noting that the "elimitation of rare taxa has 
-little effect on the analysis". In the paper about determining the number of 
-zones to split a record into, Bennett (1996) also uses only the abundant taxa 
-present at >5 % in at least one sample, stating that "Birks & Berglund (1979) and 
+[Gordon and Birks (1972)](#references) suggest that the cluster analysis should 
+only be run on taxa present at ≥5 % in at least one sample as the low abundance 
+taxa "are of little numerical importance in biostratigraphy". 
+[Grimm (1987)](#references) eliminated those present at "<3 % at every level", 
+noting that the "elimitation of rare taxa has little effect on the analysis". 
+In the paper about determining the number of zones to split a record into, 
+[Bennett (1996)](#references) also uses only the abundant taxa present at >5 % 
+in at least one sample, stating that "Birks & Berglund (1979) and 
 Birks (1986) recommended that data sets for numerical zonation should only 
-contain those taxa with proportions that exceed 5 %". Bennett (1996) then goes 
-on to assess the effect of lowering and increasing the threshold for taxa 
-inclusion. Lowering the threshold slight increases the number of zones 
-recognised, raising the threshold to 10 % or 20 % changes the location of zone 
-markers to positions that suit the remaining taxa. It's interesting to note here 
-that using the CONISS method, the analysis in Bennett (1996) identified 6 zones 
-with the threshold set at 0-5 %, 1 %, 2 % or 5 %, and identified 5 zones with 
-the threshold set at 10 % or 20 % — a difference of only one zone.
+contain those taxa with proportions that exceed 5 %". 
+[Bennett (1996)](#references) then goes on to assess the effect of lowering and 
+increasing the threshold for taxa inclusion. Lowering the threshold slight 
+increases the number of zones recognised, raising the threshold to 10 % or 20 % 
+changes the location of zone markers to positions that suit the remaining taxa. 
+It's interesting to note here that using the CONISS method, the analysis in 
+[Bennett (1996)](#references) identified 6 zones with the threshold set at 
+0-5 %, 1 %, 2 % or 5 %, and identified 5 zones with the threshold set at 10 % or 
+20 % — a difference of only one zone.
 
-Investigating those references provided by Bennett (1996), Birks (1986, pg 757) 
-gives the following reason for including on abundance taxa:  
+Investigating those references provided by [Bennett (1996)](#references), 
+[Birks (1986, pg 757)](#references) gives the following reason for including on 
+abundance taxa:  
 
 >"Experience with many data sets has shown that pollen types with values less 
 than 5 % are of minor *numerical* importance and exert little influence on the 
@@ -465,9 +500,9 @@ in the interpretation of the data in terms of past flora, vegetation and
 environment (e.g. Iversenm, 1944, 1954; Birks, 1973, 1976)."
 
 Obviously the work cited so far is quite old so I have looked around to see if 
-there has been any progression on this. Birks (2012) states that the basic 
-principles "remain largely unchanged" since they were established in Gordon and 
-Birks (1972) and Birks and Gordon (1985).
+there has been any progression on this. [Birks (2012)](#references) states that 
+the basic principles "remain largely unchanged" since they were established in 
+[Gordon and Birks (1972)](#references) and [Birks and Gordon (1985)](#references).
 
 Having read all of this, my conclusion is that I should be running the cluster 
 analysis on only abundant taxa. Although running it on all taxa would have 
@@ -510,9 +545,11 @@ ddata_ab_taxa <- dendro_data(clusters_ab_taxa, type = "rectangle")
 ab_taxa <- ggplot(segment(ddata_ab_taxa)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_x_reverse() +
-  labs(x = "Depth (m)",
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
        y = "Total sum of squares") +
+  theme_minimal() +
   theme(aspect.ratio = 3)
 
 
@@ -528,7 +565,8 @@ ab_taxa +
     title = "Abundant taxa only",
     subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
     ) +
-    geom_hline(yintercept = 12.5)
+    geom_hline(yintercept = 12.5,
+               linetype = 2)
 ```
 
 Performing the analysis on abundant taxa only does change the dendrogram quite a 
@@ -563,13 +601,15 @@ ab_taxa +
     title = "7 zones",
     subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
     ) +
-  geom_hline(yintercept = 15) +
+  geom_hline(yintercept = 15,
+             linetype = 2) +
 ab_taxa +
   labs(
     title = "11 zones",
     subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
   ) + 
-  geom_hline(yintercept = 13.2)
+  geom_hline(yintercept = 13.2,
+             linetype = 2)
 ```
 
 Forming 7 or 11 zones is actually quite difficult as for both there is only a 
@@ -592,17 +632,17 @@ I made on the dendrogram created with Tilia.
 
 ### Decision 4: Should abundant taxa be those at ≥ 4 % or ≥ 5 %?
 
-Gordon and Birks (1972) include taxa present at ≥5 % in at least one sample. As 
-I am including taxa present at ≥4 % in at least one sample in my stratigraphic 
-diagram, I thought it would be best that everything is consistent. I choose ≥4 % 
-as this meant that *Asterionella formosa* was still included on the diagram, 
-which could be very useful in interpretations. Displaying taxa present at ≥5 % 
-meant this taxon was no longer displayed. The resulting stratigraphic diagram 
-also displayed well when taxa present at ≥4 % were kept.
+[Gordon and Birks (1972)](#references) include taxa present at ≥5 % in at least 
+one sample. As I am including taxa present at ≥4 % in at least one sample in my 
+stratigraphic diagram, I thought it would be best that everything is consistent. 
+I choose ≥4 % as this meant that *Asterionella formosa* was still included on 
+the diagram, which could be very useful in interpretations. Displaying taxa 
+present at ≥5 % meant this taxon was no longer displayed. The resulting 
+stratigraphic diagram also displayed well when taxa present at ≥4 % were kept.
 
-As I mentioned under my introduction paragraph of decision 3, Bennett (1996) 
-explores the effect that changing the threshold for taxa inclusion has on the 
-zonation and found there to be little effect. 
+As I mentioned under my introduction paragraph of decision 3, 
+[Bennett (1996)](#references) explores the effect that changing the threshold 
+for taxa inclusion has on the zonation and found there to be little effect. 
 
 
 
@@ -644,9 +684,11 @@ ddata_ab_taxa_5 <- dendro_data(clusters_ab_taxa_5, type = "rectangle")
 ab_taxa_5 <- ggplot(segment(ddata_ab_taxa_5)) +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_x_reverse() +
-  labs(x = "Depth (m)",
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
        y = "Total sum of squares") +
+  theme_minimal() +
   theme(aspect.ratio = 3)
 
 
@@ -656,13 +698,15 @@ ab_taxa +
     title = "≥4 %",
     subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
   ) +
-  geom_hline(yintercept = 12.5) +
+  geom_hline(yintercept = 12.5,
+             linetype = 2) +
 ab_taxa_5 +
   labs(
     title = "≥5 %",
     subtitle = "(taxa ≥5 %,\nno P. ocellata split\noutlier removed)"
   ) +
-  geom_hline(yintercept = 11.5)
+  geom_hline(yintercept = 11.5,
+             linetype = 2)
 ```
 
 The resulting dendrograms are very similar. For the ≥5 % dendrogram, a shift of 
@@ -705,14 +749,14 @@ bstick(clusters_ab_taxa_5, ng = 25)
 
 My instinct was to calculate percentage abundances of a taxon out of all taxa 
 that were counted in a sample. I didn't even think of doing it another way until 
-I read that Gordon & Birks (1972) calculated their percentages out of only the 
-abundant taxa that they were using in their CONISS analysis. Every single paper 
-I have come across has used their method, calculating percentage abundance of 
-taxa based only on abundant taxa. I have therefore done the same throughout this 
-document. This should have been the first question I addressed but there was no 
-need to show the differences that occur in the dendrograms because of this as I 
-would never have considered doing it the way I had originally thought because it 
-is not the done thing. 
+I read that [Gordon & Birks (1972)](#references) calculated their percentages 
+out of only the abundant taxa that they were using in their CONISS analysis. 
+Every single paper I have come across has used their method, calculating 
+percentage abundance of taxa based only on abundant taxa. I have therefore done 
+the same throughout this document. This should have been the first question I 
+addressed but there was no need to show the differences that occur in the 
+dendrograms because of this as I would never have considered doing it the way I 
+had originally thought because it is not the done thing. 
 
 I am struggling with why this would be done but will have a go at guessing why — 
 the taxa present at such low abundances are not statistically viable because 
@@ -750,7 +794,8 @@ ab_taxa +
     title = "Final dendrogram",
     subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
   ) +
-  geom_hline(yintercept = 13.1)
+  geom_hline(yintercept = 13.2,
+             linetype = 2)
 ```
 
 ```{r fig.height=9}
@@ -766,31 +811,36 @@ bstick(clusters_ab_taxa, ng = 25)
 
 
 
-## References
+## References {#references}
 
 Bennett, K. D. (1996) Determination of the number of zones in a 
-biostratigraphical sequence. *New Phytologist*, 132, 155–170.
+biostratigraphical sequence. *New Phytologist*, 132, 155–170. 
+https://doi.org/10.1111/j.1469-8137.1996.tb04521.x
 
 Birks, H. J. B. (1986) Numerical zonation, comparison and correlation of 
 Quaternary pollen-stratigraphical data. In Berglund, B. E. (ed) 
-*Handbook of Palaeoecology and Palaeohydrology*. Chichester: John Wiley & Sons.
+*Handbook of Palaeoecology and Palaeohydrology*. Chichester: John Wiley & Sons. 
 
 Birks, H. J. B. (2012) Analysis of stratigraphical data. In Birks, H. J. B., 
 Lotter, A. F., Juggins, S. & Smol, J. P. (eds) *Tracking Environmental Change* 
 *using Lake Sediments. Volume 5: Data Handling and Numerical Techniques*. 
 Dordrecht: Springer.
+https://doi.org/10.1007/978-94-007-2745-8_11
 
 Birks, H. J. B. & Berglund, B. E. (1979) Holocene pollen stratigraphy of southern 
-Sweden: a reappraisal using numerical methods. *Boreas*, 8, 257–279.
+Sweden: a reappraisal using numerical methods. *Boreas*, 8, 257–279. 
+https://doi.org/10.1111/j.1502-3885.1979.tb00811.x
 
-Birks, H. J. B. & Gordon, A. D. (1985) *Numerical methods in Quaternary pollen analysis*. 
-London: Academic Press.
+Birks, H. J. B. & Gordon, A. D. (1985) *Numerical methods in Quaternary pollen *
+*analysis*. London: Academic Press.
 
 Gordon, A. D. & Birks, H. J. B. (1972) Numerical methods in Quaternary 
-palaeoecology. I. Zonation of pollen diagrams. *New Phytologist*, 71, 961–979.  
+palaeoecology. I. Zonation of pollen diagrams. *New Phytologist*, 71, 961–979. 
+https://doi.org/10.1111/j.1469-8137.1972.tb01976.x  
 
 Grimm, E. C. (1987) CONISS: A Fortran 77 program for stratigraphically 
 constrained cluster analysis by the method of incremental sum of squares. 
-*Computers & Geosciences*, 13, 13–35.
+*Computers & Geosciences*, 13, 13–35. https://doi.org/10.1016/0098-3004(87)90022-7
 
-Grimm, E. C. (2011) *Tilia version 1.7.16* [Software]. Illinois State Museum, Springfield.
+Grimm, E. C. (2011) *Tilia version 1.7.16* [Software]. Illinois State Museum, 
+Springfield. https://www.tiliait.com
