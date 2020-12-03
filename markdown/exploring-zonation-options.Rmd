@@ -752,11 +752,7 @@ that were counted in a sample. I didn't even think of doing it another way until
 I read that [Gordon & Birks (1972)](#references) calculated their percentages 
 out of only the abundant taxa that they were using in their CONISS analysis. 
 Every single paper I have come across has used their method, calculating 
-percentage abundance of taxa based only on abundant taxa. I have therefore done 
-the same throughout this document. This should have been the first question I 
-addressed but there was no need to show the differences that occur in the 
-dendrograms because of this as I would never have considered doing it the way I 
-had originally thought because it is not the done thing. 
+percentage abundance of taxa based only on abundant taxa.
 
 I am struggling with why this would be done but will have a go at guessing why — 
 the taxa present at such low abundances are not statistically viable because 
@@ -768,6 +764,106 @@ case and the occurence of that rare taxon valve is representative of the origina
 population. Either way there is an element of doubt due to such low counts 
 (sometimes only one or two valves) that it statistically more robust to remove 
 them.
+
+
+
+
+### Compare dendrograms
+
+```{r fig.height=9}
+
+# With percentages based on sum of abundant taxa
+# ——————————————————————————————————————————————
+
+# Prepare data
+taxa$sum_ab_only <- taxa$counts %>%
+  # isolate taxa present at ≥4 %
+  transmute(
+    sample_no = sample_no,
+    select(., all_of(abundant_taxa(taxa$rel_ab, 4)))
+  ) %>%
+  # convert to proportion based on only these abundant taxa
+  mutate(
+    sample_no = sample_no,
+    decostand(select(., -sample_no), 
+              method = "total",
+              na.rm = "TRUE")
+  )
+  
+dist_matrix_sum_ab_only <- taxa$sum_ab_only %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  `/`(100) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_sum_ab_only <- chclust(dist_matrix_sum_ab_only, method = "coniss")
+
+# Create plot
+ddata_sum_ab_only <- dendro_data(clusters_sum_ab_only, type = "rectangle")
+sum_ab_only <- ggplot(segment(ddata_sum_ab_only)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
+       y = "Total sum of squares") +
+  theme_minimal() +
+  theme(aspect.ratio = 3)
+
+# Plot dendrograms
+ab_taxa +
+  labs(
+    title = "% based on all taxa sum",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+  ) +
+  geom_hline(yintercept = 12.5,
+             linetype = 2) +
+sum_ab_only +
+    labs(
+    title = "% based on abundant taxa sum",
+    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
+  ) + 
+  geom_hline(yintercept = 0.14,
+             linetype = 2)
+
+```
+
+The dendograms look very similar. The most obvious difference is that the total 
+sum of squares values on the x-axis have become very small! There are some minor 
+differences at the low level splits (those that cluster towards the left side of 
+the plot), but nothing that effects the zonation. If I calculate the distance 
+matrix on percentages, rather than proportions out of 1, then the total sum of 
+squares values go back to their usual span of 0 to around 20/30. These are nice 
+whole numbers and look nicer that the awkward decimals on this latest plot. The 
+absolute values for the total sum of squares doesn't isn't of any use to me and 
+the only reason I converted to proportions was to replicate the Tilia analysis. 
+So it might be best to not convert them to proportions out of 1. It is also 
+nice that it means I can just stick with percentages for consistency.
+
+
+
+
+#### Compare broken stick
+
+```{r}
+par(mfrow = c(1, 2))
+bstick(clusters_ab_taxa, ng = 25)
+bstick(clusters_sum_ab_only, ng = 25)
+```
+
+The broken stick model for the percentages based on only the abundant taxa 
+suggests there should be 12 zones rather than the 11 zones previously identified. 
+This is the same number of zones that I had originally split the record into.
 
 
 
@@ -789,17 +885,42 @@ After addressing all of my questions, this is the resulting CONISS analysis and
 zonation scheme that I have decided upon.
 
 ```{r fig.height=9}
-ab_taxa +
-  labs(
-    title = "Final dendrogram",
-    subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)"
-  ) +
-  geom_hline(yintercept = 13.2,
+
+# Recreate matrix but based on percentages rather than proportions out of 1.0
+dist_matrix_sum_ab_only <- taxa$sum_ab_only %>%
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  sqrt() %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth") %>%
+  designdist(., method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+clusters_sum_ab_only <- chclust(dist_matrix_sum_ab_only, method = "coniss")
+
+# Create plot
+ddata_sum_ab_only <- dendro_data(clusters_sum_ab_only, type = "rectangle")
+ggplot(segment(ddata_sum_ab_only)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
+       y = "Total sum of squares") +
+  theme_minimal() +
+  theme(aspect.ratio = 3) +
+  geom_hline(yintercept = 14,
              linetype = 2)
 ```
 
 ```{r fig.height=9}
-bstick(clusters_ab_taxa, ng = 25)
+bstick(clusters_sum_ab_only, ng = 25)
 ```
 
 
