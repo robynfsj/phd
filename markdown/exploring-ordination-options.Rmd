@@ -1,0 +1,89 @@
+---
+title: "Exploring ordination options"
+author: "Robyn Seymour-Jones"
+date: "15/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Introduction
+I want to perform an ordination on my diatom results to pick out the main 
+variation in the diatom assemblage throughout my record and to see if I can find 
+out what might be driving this variation. I don't have any environmental data so 
+I won't be trying to fit any known variables to the ordination. Instead, I will 
+use knowledge of the environmental preferences of the taxa along the gradients 
+to interpret what environmental variables the gradients could represent. 
+Therefore, I will only be looking into unconstrained ordination methods. There 
+are several options to decide upon when running the ordination:
+
+* Do the data need to be transformed?
+
+
+* What type of ordination should be performed? 
+I have already decided I need to use unconstrained ordination techniques. But I
+also need to decide on the type of ordination to use based on the distributions 
+of the species data. 
+
+
+* Should the raw diatom counts be transformed? If so, which transformation 
+should be used?
+
+* Should the diatom data be scaled to unit variance (i.e. standardised)?
+
+
+
+## Set up
+
+First the requirements are loaded. The manipulate script loads the raw data into 
+a list of dataframes (imported) and then manipulates the data into various other 
+lists of dataframes.
+
+```{r message=FALSE}
+source("scripts/02-manipulate.R")
+library(ggplot2)
+```
+
+This is the structure of the data and functions that area loaded by running the 
+manipulate script.
+
+```{r}
+ls.str()
+```
+
+The ordination data will go in its own list so this is created next. 
+
+```{r}
+ordination <- list()
+```
+
+The dataframes have sample_no as the first variable and still contain samples 
+within which no diatoms were counted. These must be removed for ordination. A
+function is created so that the original dataframes can remain in a consistent
+format and so that I always know that any dataframe I come to use will have
+sample_no as the first variable. The function removes samples with no diatoms 
+and moves sample_no to row names so that this information is preserved after 
+ordination.
+
+```{r}
+ord_data <- function(df) {
+  df %>%
+    filter(rowSums(.[, -1]) > 0) %>%
+    column_to_rownames("sample_no")
+}
+```
+
+## Ordination of all taxa vs. abundant taxa
+
+## Ordination of different transfromations
+
+## Plotting difference scalings
+
+
+
+
+
+
+## Ordination on abundant taxa only

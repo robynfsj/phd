@@ -1,0 +1,205 @@
+---
+title: "Plotting dendrograms"
+author: "Robyn Seymour-Jones"
+date: "04/12/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: lumen
+knit: (function(input_file, encoding) {
+  out_dir <- "../docs";
+  rmarkdown::render(input_file,
+  encoding = encoding,
+  output_file = file.path(dirname(input_file), out_dir, "plotting-dendrograms.html"))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Introduction
+
+It is proving difficult to plot a dendrogram for my diatom record as it contains 
+missing samples (some completely missing because of a misplaced section of the 
+sediment core and some where there were no diatoms present). The document 
+explores the various options for plotting dendrograms in R.
+
+I want to add the dendrogram to the right of my stratigraphic plot, which I am 
+plotting with ggplot and the help of the tidypaleo package. Therefore, I ideally 
+want to plot the dendrogram with ggplot too.
+
+
+
+
+## Load requirements
+
+```{r message=FALSE}
+library(rioja)
+library(ggplot2)
+library(ggdendro)
+source("scripts/borders-for-ggplot2.R")
+source("scripts/02-manipulate.R")
+```
+
+
+
+
+## Prepare data and run cluster analysis
+
+```{r}
+
+# Prepare data for analysis
+coniss_data <- taxa$counts %>%
+  # isolate taxa present at ≥4 %
+  transmute(
+    sample_no = sample_no,
+    select(., all_of(abundant_taxa(taxa$rel_ab, 4)))
+  ) %>%
+  # convert to proportion based on only these abundant taxa
+  mutate(
+    sample_no = sample_no,
+    decostand(select(., -sample_no), 
+              method = "total",
+              na.rm = "TRUE")
+  ) %>%
+  # replace sample numbers with depths
+  mutate(
+    depth = imported$depths$depth,
+    sample_no = NULL
+  ) %>%
+  # remove samples with no diatoms
+  column_to_rownames("depth") %>%
+  filter(., rowSums(.) > 0) %>%
+  # square-root transform
+  sqrt() %>%
+  # remove outlier
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  slice(., -44) %>%
+  column_to_rownames("depth")
+
+# Calculate distance matrix
+dist_matrix <- designdist(coniss_data, method = "A+B-2*J", terms = "quadratic")
+
+# Run cluster analysis
+coniss_results <- chclust(dist_matrix, method = "coniss")
+```
+
+
+
+
+## Plotting with ```plot.chclust()```
+I have successfully managed to plot the dendrogram I am after through the 
+```plot.chclust()``` method from the rioja package. Although this is what I am 
+after, it is not ideal as my other plots are created with ggplot and it makes it 
+difficult to combine them in to one plot.
+
+```{r fig.height=9, fig.width=3, fig.align="center"}
+
+# Isolate depths
+coniss_depths <- coniss_data %>%
+  rownames_to_column("depth") %>%
+  mutate(depth = as.numeric(depth)) %>%
+  select(., "depth")
+
+# Plot
+plot(
+  coniss_results, 
+  hang = -1, # make leaves extend to 0 and labels hang down from there
+  horiz = TRUE, # display plot vertically (depths now "x-axis")
+  x.rev = TRUE, # reverse depths
+  xvar = coniss_depths$depth, # plot samples by depth rather than just sequential order
+  labels = FALSE, # remove leaf labels
+  cex.axis = 0.6,
+  tcl = -0.1
+)
+```
+
+There are a few other problems with this plot. I can't plot the axis label (it 
+should be "Total sum of squares"). Also, the leaves extend to the left of the 0 
+but I would ideally want them to stop at 0. It doesn't seem to do this in the 
+examples I have seen elsewhere.
+
+
+
+
+## Plotting with the ggdendro package
+
+This is the first way I plotted my dendrograms but I just couldn't figure out 
+how to plot the leaves/segments by depth rather than just in sequential order. I 
+think it would require some sort of alteration to the ```dendro_data()``` 
+function in order to extract values for the segments that are aligned with the 
+depths rather than just in order. This is something I just don't have the time 
+to try to explore.
+
+```{r fig.height=7}
+
+# Extract dendrogram data 
+ddata <- dendro_data(coniss_results, type = "rectangle")
+
+# Plot
+ggplot(segment(ddata)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
+       y = "Total sum of squares") +
+  theme_bw(8) +
+  theme(aspect.ratio = 4,
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.border = theme_border("bottom"),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"))
+```
+
+This is exactly how I want the dendrogram to display, except that I want it with 
+the gaps that are present in the version created with ```plot.chclust()```.
+
+
+
+
+## Solution from a hero on Stack Overflow
+
+I just could not figure out to plot the dendrogram leaves by depth so I posted 
+my first ever question on Stack Overflow. I didn't think I would get a reply 
+but I got one with 10 minutes! I had been reluctant to ask a question on there 
+as I knew I had to write out the question really clearly and provide example 
+data and examples of what I want to achieve. I just thought it would take too 
+long and migtht not get a reply. I can't believe how easy it was and how helpful. 
+Here is the soloution. It is only three lines of code that was causing me all 
+this stress!
+
+```{r fig.height=7}
+
+# Map depths to x values
+new_x <- approxfun(ddata$labels$x, as.numeric(as.character(ddata$labels$label))) 
+ddata$segments$x <- new_x(ddata$segments$x)
+ddata$segments$xend <- new_x(ddata$segments$xend)
+
+# Plot (same as previous)
+ggplot(segment(ddata)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_reverse(breaks = NULL,
+                  labels = NULL) +
+  labs(x = "",
+       y = "Total sum of squares") +
+  theme_bw(8) +
+  theme(aspect.ratio = 4,
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.border = theme_border("bottom"),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"))
+```
+
+
+
+
+
