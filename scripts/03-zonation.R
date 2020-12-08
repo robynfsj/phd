@@ -32,7 +32,7 @@
 
 # 1. Load requirements ----------------------------------------------------
 
-library(rioja) # for chclust()
+library(rioja) # chclust()
 
 source("scripts/02-manipulate.R")
 
@@ -65,55 +65,72 @@ source("scripts/02-manipulate.R")
 #   calculating the squared Euclidean distance has proved "particularly 
 #   satisfactory" for abundance data.
 
-dist_matrix <- taxa$rel_ab_4 %>%
-  # add depths to data frame
+# Create new list
+coniss <- list()
+
+# Prepare data for analysis
+coniss$data <- taxa$counts %>%
+  # isolate taxa present at ≥4 %
+  transmute(
+    sample_no = sample_no,
+    select(., all_of(abundant_taxa(taxa$rel_ab, 4)))
+  ) %>%
+  # convert to proportion based on only these abundant taxa
+  mutate(
+    sample_no = sample_no,
+    decostand(select(., -sample_no), 
+              method = "total",
+              na.rm = "TRUE")
+  ) %>%
+  # replace sample numbers with depths
   mutate(
     depth = imported$depths$depth,
     sample_no = NULL
   ) %>%
   # remove samples with no diatoms
   column_to_rownames("depth") %>%
-  # transform data (to proportions out of 1.0 then square root)
-  filter(., rowSums(.) > 0) %>% 
-  `/`(100) %>% 
+  filter(., rowSums(.) > 0) %>%
+  # square-root transform
   sqrt() %>%
   # remove outlier
   rownames_to_column("depth") %>%
   mutate(depth = as.numeric(depth)) %>%
   slice(., -44) %>%
-  column_to_rownames("depth") %>%
-  # calculate squared euclidean distances
-  designdist(., method = "A+B-2*J", terms = "quadratic")
+  column_to_rownames("depth")
+  
+# Calculate distance matrix
+coniss$dist_matrix <- designdist(coniss$data, 
+                                 method = "A+B-2*J", 
+                                 terms = "quadratic")
 
 
 
 
 # 3. Run cluster analysis -------------------------------------------------
 
-clusters <- chclust(dist_matrix, method = "coniss")
+coniss$results <- chclust(coniss$dist_matrix, method = "coniss")
 
-# bstick(clusters, ng = 30)
-# 11 statistically significant zones
-
-
+# bstick(coniss$results, ng = 30)
+# 12 significant zones
 
 
-# 4. Quick plot of dendrogram to check ------------------------------------
-
-# library(ggdendro)
+# 4.  Plot ----------------------------------------------------------------
+#
+# library(ggdendro) # dendro_data()
 # library(ggplot2)
-# ddata <- dendro_data(clusters, type = "rectangle")
-# ggplot(segment(ddata)) +
+#
+# # Extract cluster analysis results
+# coniss$dendrogram <- dendro_data(coniss$results, type = "rectangle")
+# 
+# # Create plot
+# ggplot(segment(coniss$dendrogram)) +
 #   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
 #   coord_flip() +
-#   scale_x_reverse() +
-#   labs(title = "Final dendrogram",
-#        subtitle = "(taxa ≥4 %,\nno P. ocellata split\noutlier removed)",
-#        x = "Depth (m)",
+#   scale_x_reverse(breaks = seq(0, 200, by = 5)) +
+#   labs(x = "",
 #        y = "Total sum of squares") +
-#   theme(aspect.ratio = 3) +
-#   geom_hline(yintercept = 13.2)
-
+#   theme_minimal() +
+#   theme(aspect.ratio = 3)
 
 
 
