@@ -33,6 +33,7 @@
 # 1. Load requirements ----------------------------------------------------
 
 library(rioja) # chclust()
+library(ggdendro) # dendro_data()
 
 source("scripts/02-manipulate.R")
 
@@ -114,23 +115,42 @@ coniss$results <- chclust(coniss$dist_matrix, method = "coniss")
 # 12 significant zones
 
 
+
+
+# 4. Extract data for plotting --------------------------------------------
+
+coniss$ddata<- dendro_data(coniss$results, type = "rectangle")
+
+# Modify x values so leaves are plotted by depth in core rather than in 
+# sequential order
+new_x <- approxfun(coniss$ddata$labels$x, 
+                   as.numeric(as.character(coniss$ddata$labels$label))) 
+coniss$ddata$segments$x <- new_x(coniss$ddata$segments$x)
+coniss$ddata$segments$xend <- new_x(coniss$ddata$segments$xend)
+
+
+
+
 # 4.  Plot ----------------------------------------------------------------
-#
-# library(ggdendro) # dendro_data()
-# library(ggplot2)
-#
-# # Extract cluster analysis results
-# coniss$dendrogram <- dendro_data(coniss$results, type = "rectangle")
 # 
 # # Create plot
-# ggplot(segment(coniss$dendrogram)) +
+# library(ggplot2)
+# source("scripts/borders-for-ggplot2.R")
+# ggplot(segment(coniss$ddata)) +
 #   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
 #   coord_flip() +
-#   scale_x_reverse(breaks = seq(0, 200, by = 5)) +
+#   scale_y_continuous(expand = c(0, 0)) +
+#   scale_x_reverse(breaks = NULL,
+#                   labels = NULL) +
 #   labs(x = "",
 #        y = "Total sum of squares") +
-#   theme_minimal() +
-#   theme(aspect.ratio = 3)
+#   theme_bw(8) +
+#   theme(aspect.ratio = 4,
+#         legend.position = "none",
+#         panel.grid = element_blank(),
+#         panel.border = theme_border("bottom"),
+#         panel.background = element_rect(fill = "transparent"),
+#         plot.background = element_rect(fill = "transparent"))
 
 
 
