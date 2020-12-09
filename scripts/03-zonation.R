@@ -46,12 +46,6 @@ source("scripts/02-manipulate.R")
 #
 # — Samples containing no diatoms are removed. 
 #
-# — The percentage relative abundances are divided by 100 to transform them to 
-#   unit proportions (i.e. out of 1.0). This step is only necessary to keep the 
-#   result the same as the one I obtained from Tilia. If this step is not done, 
-#   the dendrogram looks the same except the x-axis values are just 100 times 
-#   larger.
-#
 # — The data are then square-root transformed. This step is necessary as the 
 #   record is dominated by one taxon (P. ocellata). Square-root transforming 
 #   ensures the less abundant taxa play a more important role in the cluster 
@@ -93,7 +87,7 @@ coniss$data <- taxa$counts %>%
   filter(., rowSums(.) > 0) %>%
   # square-root transform
   sqrt() %>%
-  # remove outlier
+  # remove outlier (sample with only a few diatoms)
   rownames_to_column("depth") %>%
   mutate(depth = as.numeric(depth)) %>%
   slice(., -44) %>%
@@ -131,7 +125,15 @@ coniss$ddata$segments$xend <- new_x(coniss$ddata$segments$xend)
 
 
 
-# 4.  Plot ----------------------------------------------------------------
+# 5. Clean up -------------------------------------------------------------
+
+rm(new_x)
+
+
+
+
+# 6.  Plot ----------------------------------------------------------------
+# # Moved to strat-plot.R
 # 
 # # Create plot
 # library(ggplot2)
@@ -151,6 +153,7 @@ coniss$ddata$segments$xend <- new_x(coniss$ddata$segments$xend)
 #         panel.border = theme_border("bottom"),
 #         panel.background = element_rect(fill = "transparent"),
 #         plot.background = element_rect(fill = "transparent"))
+
 
 
 
