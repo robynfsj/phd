@@ -116,6 +116,7 @@ preservation <- list()
 
 # 3.1 Create df: all_splits ----
 # ——————————————————————————————
+
 p_ocellata$all_splits <- imported$p_oc_breakdown
 
 
@@ -214,6 +215,7 @@ p_ocellata$split_20µm <- p_ocellata$size_split %>%
 
 # 4.1 Create taxa abundance dfs ----
 # ——————————————————————————————————
+
 taxa$counts <- imported$counts
 
 taxa$rel_ab <- taxa$counts %>%
@@ -250,6 +252,7 @@ taxa$rel_ab_4_tidy <- inner_join(imported$depths, taxa$rel_ab_4) %>%
 
 # 4.2 Create taxa abundance dfs with P. ocellata 20µm split ----
 # ———————————————————————————————————————————————————————————————
+
 # NOTE: Proper taxon names used for easy plotting later.
 
 taxa$counts_split_20µm <- taxa$counts %>%
@@ -344,8 +347,8 @@ taxa$life_mode_rel_ab_tidy <- inner_join(imported$depths,
 
 # 5.1 Set microsphere concentration ----
 # ——————————————————————————————————————
-# Concentration of microspheres used to create slides.
 
+# Concentration of microspheres used to create slides.
 micros_conc = 68100000 
 
 
@@ -394,6 +397,7 @@ rm(micros_conc)
 
 # 6.1 Create df: f_index ----
 # ———————————————————————————
+
 # Missing samples need to be skipped so they remain as NA. Samples containing no 
 # diatoms should have an F index of 0 as they contain evidence that samples 
 # would have contained diatoms (e.g. tiny fragments of diatoms are present) but 
@@ -410,6 +414,7 @@ preservation$f_index <- imported$f_index %>%
 
 # 6.2 Create P. ocellata preservation dfs ----
 # ————————————————————————————————————————————
+
 # Replaces the raw count for each P. ocellata category with percentage 
 # abundance. Samples containing no diatoms need to be skipped.
 
