@@ -44,7 +44,8 @@ source("scripts/02-manipulate.R")
 
 # Steps:
 #
-# — Samples containing no diatoms are removed. 
+# — Samples containing no diatoms are removed. As is an outlier where very few
+#   diatoms were counted.
 #
 # — The data are then square-root transformed. This step is necessary as the 
 #   record is dominated by one taxon (P. ocellata). Square-root transforming 
@@ -132,7 +133,7 @@ rm(new_x)
 
 
 
-# 6.  Plot ----------------------------------------------------------------
+# # 6.  Plot ----------------------------------------------------------------
 # # Moved to strat-plot.R
 # 
 # # Create plot
