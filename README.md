@@ -17,4 +17,5 @@ stratigraphic diagram
   
 The following pages document some of my thought processes:  
 [Exploring zonation options](https://robynfsj.github.io/phd-ioannina-long-record/exploring-zonation-options.html)  
-[Plotting dendrograms](https://robynfsj.github.io/phd-ioannina-long-record/plotting-dendrograms.html)
+[Plotting dendrograms](https://robynfsj.github.io/phd-ioannina-long-record/plotting-dendrograms.html)  
+[Exploring ordination options](https://robynfsj.github.io/phd-ioannina-long-record/exploring-ordination-options.html)
