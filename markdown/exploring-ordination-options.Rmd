@@ -1,66 +1,80 @@
 ---
 title: "Exploring ordination options"
 author: "Robyn Seymour-Jones"
-date: "15/11/2020"
-output: html_document
+date: "09/12/2020"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: lumen
+knit: (function(input_file, encoding) {
+  out_dir <- '../docs';
+  rmarkdown::render(input_file,
+  encoding = encoding,
+  output_file = file.path(dirname(input_file), out_dir, 'exploring-ordination-options.html'))})
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-## Introduction
+## 1. Introduction
 I want to perform an ordination on my diatom results to pick out the main 
 variation in the diatom assemblage throughout my record and to see if I can find 
 out what might be driving this variation. I don't have any environmental data so 
 I won't be trying to fit any known variables to the ordination. Instead, I will 
 use knowledge of the environmental preferences of the taxa along the gradients 
 to interpret what environmental variables the gradients could represent. 
-Therefore, I will only be looking into unconstrained ordination methods. There 
-are several options to decide upon when running the ordination:
+Therefore, I will only be looking into unconstrained ordination methods.  
+  
+There are several options to decide upon when running the ordination:
 
-* Do the data need to be transformed?
-
-
-* What type of ordination should be performed? 
-I have already decided I need to use unconstrained ordination techniques. But I
-also need to decide on the type of ordination to use based on the distributions 
-of the species data. 
-
-
-* Should the raw diatom counts be transformed? If so, which transformation 
+1. Should the raw diatom counts be transformed? If so, which transformation 
 should be used?
 
-* Should the diatom data be scaled to unit variance (i.e. standardised)?
+2. Should the diatom data be scaled to unit variance (i.e. standardised)?
+
+3. Should the ordination be performed on all taxa or only abundant taxa (e.g. 
+taxa present at ≥4% in at least one sample)? If performing on only abundant taxa, 
+should the relative abundance be calculated from a sum of all taxa or only those 
+abundant taxa?
+
+4. What type of ordination should be performed? I have already decided I need to 
+use unconstrained ordination techniques. But I also need to decide on the type 
+of ordination to use based on the distributions of the species data.
+
+********************************************************************************
 
 
 
-## Set up
 
-First the requirements are loaded. The manipulate script loads the raw data into 
-a list of dataframes (imported) and then manipulates the data into various other 
-lists of dataframes.
+## 2. Set up
+
+The data are imported with the 
+[manipulate script](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R). 
+I will need the data frames in the **taxa** list. I will also need the depths 
+data frame in the **imported** list.
 
 ```{r message=FALSE}
-source("scripts/02-manipulate.R")
 library(ggplot2)
+library(patchwork)
+source("scripts/02-manipulate.R")
 ```
 
-This is the structure of the data and functions that area loaded by running the 
-manipulate script.
 
-```{r}
-ls.str()
-```
 
-The ordination data will go in its own list so this is created next. 
 
-```{r}
-ordination <- list()
-```
+********************************************************************************
+
+
+
+
+## 3. Data preparation method
 
 The dataframes have sample_no as the first variable and still contain samples 
-within which no diatoms were counted. These must be removed for ordination. A
+within which no diatoms were counted (as well as an outlier where diatoms were 
+present, but only 100 were counted). These must be removed for ordination. A
 function is created so that the original dataframes can remain in a consistent
 format and so that I always know that any dataframe I come to use will have
 sample_no as the first variable. The function removes samples with no diatoms 
@@ -70,20 +84,615 @@ ordination.
 ```{r}
 ord_data <- function(df) {
   df %>%
-    filter(rowSums(.[, -1]) > 0) %>%
+    filter(sample_no != "189" & rowSums(.[, -1]) > 0) %>%
     column_to_rownames("sample_no")
 }
 ```
 
-## Ordination of all taxa vs. abundant taxa
 
-## Ordination of different transfromations
 
-## Plotting difference scalings
 
+********************************************************************************
 
 
 
 
+## 4. Addressing my questions
 
-## Ordination on abundant taxa only
+### Decision 1: Should the raw diatom counts be transformed? And if so, which transformation should be used?
+
+[Legendre and Borcard (2018:1821)](#references) state that "[e]cologists have 
+long known that untransformed (site × species) community composition data should 
+not be analysed using the Euclidean distance, or through methods of multivariate 
+analysis that preserve the Euclidean distance, such as principal component 
+analysis and redundancy analysis, where calculations are carried out in 
+Euclidean space". Therefore, if I am to perform a principal component analysis 
+(PCA), it is clear that I need to transform the data prior to the analysis. 
+
+Transforming the data reduces the skewness of a species distribution and helps 
+to address the double zero problem (the unwanted situation where the absence of 
+a species from two sites is interpreted as an indication of similarity between 
+the sites). Through doing this, it makes the data suitable for analysis using 
+linear methods (such as PCA) within Euclidean space.
+
+I don't think I am that interested in placing higher weightings on rare taxa as 
+I am looking to find the main variation within the data. If the record is 
+dominated by one taxon (as I know it is), I want the results of the ordination 
+to show this. However, I don't want the absence of a species from two samples to 
+indicate similarity.
+
+
+
+
+#### Transformation: relative abundances
+
+I have already transformed the data into percentage relative abundances as part 
+of the [manipulate script](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R). 
+These are the data frames in the taxa list with the rel_ab prefix. Note that I 
+perform these analyses on abundant taxa only with percentages calculated based 
+on a sum of all taxa counted in a sample. This is so that the analyses produce 
+cleaner plots with fewer taxa displayed. I will address whether this is the 
+right thing to do in later sections of this document.
+
+##### DCA
+
+```{r}
+untransformed_dca <- decorana(ord_data(taxa$rel_ab_4))
+untransformed_dca
+```
+
+DCA1 axis length is <2.5 so linear methods such as PCA are appropriate 
+([Legendre & Birks, 2012](#references)). 
+
+##### PCA
+
+```{r}
+untransformed_pca <- rda(ord_data(taxa$rel_ab_4))
+untransformed_pca
+```
+
+```{r collapse=TRUE}
+# Proportion of variance explained by PC1 and PC2
+sum((as.vector(untransformed_pca$CA$eig) / sum(untransformed_pca$CA$eig))[1:2]) * 100
+
+# Proportion of variance explained by PC1
+sum((as.vector(untransformed_pca$CA$eig) / sum(untransformed_pca$CA$eig))[1]) * 100
+
+# Proportion of variance explained by PC2
+sum((as.vector(untransformed_pca$CA$eig) / sum(untransformed_pca$CA$eig))[2]) * 100
+
+```
+
+
+
+
+##### Plot of PC1 by core depth
+
+```{r message=FALSE}
+untransformed_pc1_scrs <- data.frame(scores(untransformed_pca, 
+                                            choices = 1, # select only PC1
+                                            display = "sites",
+                                            scaling = 0)) %>%
+  mutate(sample_no = as.numeric(row.names(.))) %>%
+  right_join(imported$depths)
+
+plot_untransformed_pc1 <- ggplot(untransformed_pc1_scrs, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(expand = c (0, 0), breaks = seq(130, 290, 10)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "Depth (m)") +
+  theme_classic(8) +
+  theme(aspect.ratio = 3) 
+
+plot_untransformed_pc1 
+```
+
+
+
+
+##### Quick ordination biplots
+
+```{r}
+biplot(untransformed_pca, scaling = "none")
+```
+
+Scale the species in order to display the distribution of the sites more clearly.
+
+```{r}
+biplot(untransformed_pca, scaling = "species")
+```
+
+
+
+
+##### Evaluation
+
+According to [Legendre and Gallagher (2001)](#references), a species profile 
+transformation is not the best transformation to use as it still considers 
+double zeros to be an indicator of similarity.
+
+PC1 and PC2 explain a large proportion of the variance in the PCA (81%). In 
+particular, PC1 explains 65% of the variance, which is good as I want to plot 
+PC1 alongside my stratigraphic diagram.
+
+The sites are spread out oddly, forming a sort of wedge shape pointing towards 
+the left of the plot and two trailing tail shapes on the right side of the plot, 
+which I think might be the horseshoe effect. I don't really understand the 
+horseshoe effect except that it isn't desirable. I don't know if the horseshoe 
+shape is always vertical or if it can appear horizontal as I think it does here.
+
+There are two species that stand out as driving the variation across the samples. 
+I have plotted the quick biplots as points above so they are easy to read but 
+plotting with text shows these species are *P. ocellata* and *P. minuscula*, 
+which is what I expected as *P. ocellata* dominates my record.
+
+
+```{r}
+biplot(untransformed_pca, scaling = "sites", type = "text")
+```
+
+
+
+
+********************************************************************************
+
+
+
+
+#### Transformation: Hellinger (square root of relative abundances)
+
+Square root transformation "lowers the importance of the most abundant species, 
+which may grow exponentially when they encounter favourable conditions" 
+([Legendre & Birks, 2012:216](#references)).
+
+
+
+
+##### Square-root transform data
+
+```{r}
+sqrt_rel_ab_4 <- ord_data(taxa$rel_ab_4) %>%
+  sqrt()
+```
+
+
+
+
+##### DCA
+
+```{r}
+sqrt_dca <- decorana(sqrt_rel_ab_4)
+sqrt_dca
+```
+DCA1 axis length is <2.5 so linear methods such as PCA are appropriate 
+([Legendre & Birks, 2012](#references)).
+
+
+
+
+##### PCA
+
+```{r}
+sqrt_pca <- rda(sqrt_rel_ab_4)
+sqrt_pca
+```
+
+```{r collapse=TRUE}
+# Proportion of variance explained by PC1 and PC2
+sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1:2]) * 100
+
+# Proportion of variance explained by PC1
+sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1]) * 100
+
+# Proportion of variance explained by PC2
+sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[2]) * 100
+```
+
+
+
+
+##### Plot of PC1 by core depth
+
+```{r message=FALSE}
+sqrt_pc1_scrs <- data.frame(scores(sqrt_pca, 
+                                   choices = 1, # select only PC1
+                                   display = "sites",
+                                   scaling = 0)) %>%
+  mutate(sample_no = as.numeric(row.names(.))) %>%
+  right_join(imported$depths)
+
+plot_sqrt_pc1 <- ggplot(sqrt_pc1_scrs, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(expand = c (0, 0), breaks = seq(130, 290, 10)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "Depth (m)") +
+  theme_classic(8) +
+  theme(aspect.ratio = 3) 
+
+plot_sqrt_pc1
+```
+
+
+
+
+##### Quick ordination biplot
+
+```{r}
+biplot(sqrt_pca, scaling = "none")
+```
+
+Scale the species in order to display the distribution of the sites more clearly.
+
+```{r}
+biplot(sqrt_pca, scaling = "species")
+```
+
+
+
+
+##### Evaluation
+
+[Legendre and Gallagher (2001)](#references) recommend this transformation 
+(or the chord transformation) for species abundance data where it is not desired 
+to give large weightings to rare species. According to what I have read, this 
+should be the transformation most suitable for my data. 
+
+PC1 only explains 26% of the variance, which is not ideal when I want to plot 
+this alongside my stratigraphic diagram as it doesn't explain much.
+
+The biplot looks ok with sites spread out nicely, although there is a slight 
+horseshoe effect. Two species drive more variation than the rest. Again these 
+are *P. ocellata* and *P. minuscula*:
+
+```{r}
+biplot(sqrt_pca, scaling = "sites", type = "text")
+```
+
+
+
+
+##### Comparison of transformations 
+
+```{r}
+plot_untransformed_pc1 +
+  labs(title = "PC1 of percentage\nabundance PCA") +
+plot_sqrt_pc1 +
+  labs(title = "PC1 of square-root transformed\npercentage abundance PCA")
+```
+
+
+```{r}
+par(mfrow = c(1, 2))
+
+biplot(untransformed_pca, 
+       scaling = "species", 
+       main = "PCA on percentage abundance",
+       cex.main = 0.7)
+
+biplot(sqrt_pca, 
+       scaling = "species", 
+       main = "PCA on square-root transformed percentage abundance",
+       cex.main = 0.7)
+```
+
+
+The biplot for the square-root transformation looks much nicer than the biplot 
+for the percentage abundance data. The samples are more spread out and the 
+species arrows are more similar in length to each other, rather than there being 
+two arrows that were much longer than the others. The latter demonstrates the 
+impact of square-root transforming the percentage abundances, giving less weight 
+to very abundant taxa.
+
+
+
+
+
+********************************************************************************
+
+
+
+
+### Decision 2: Should the diatom data be scaled to unit variance (i.e. standardised)?
+
+Standardisation is a special form of transformation where the variables are 
+transformed to have a mean of 0 and a variance (or sometimes a standard 
+deviation) of 1. This puts different variables on the same scale. When working 
+with physical, chemical or geological variables, it is standard practice to 
+standardise these variables prior to an ordination as they are measured in 
+different units. If this step is not done then a variable that is measured in 
+larger numbers is weighted more heaviliy in the ordination than a variable 
+measured in smaller numbers. For example, lake temperature measured in degrees 
+celcius might fall within the range of 5 to 15 degrees but depth could be several 
+hundreds of meters. If we want to give the same weighting to these variables so 
+they equally contribute to the ordination then they would need to be standardised. 
+However, when working with species variables, these are all clearly measured in 
+the same unit so there is no need to standardise. But, if the raw counts are 
+transformed into relative proportions (and the ordination is run on all taxa, 
+not only on the abundant ones), then this is effectively a standardisation.
+
+My question of standardisation here has developed slightly and is only relevant 
+if I decide to run the ordination on only abundant taxa. In this situation, do I 
+perform the ordination on percentages of the abundant taxa based on a sum of all 
+taxa or the percentages based on a sum of only those abundant taxa? This is a 
+similar situation to when I was trying to decide on how to run my cluster 
+analysis (see decision 5 of [Exploring zonation options](https://robynfsj.github.io/phd-ioannina-long-record/exploring-zonation-options.html)). 
+
+```{r}
+# Prepare data for analysis
+abundant_taxa <- taxa$counts %>%
+  # isolate taxa present at ≥4 %
+  transmute(
+    sample_no = sample_no,
+    select(., all_of(abundant_taxa(taxa$rel_ab, 4)))
+  ) %>%
+  # convert to proportion based on only these abundant taxa
+  mutate(
+    sample_no = sample_no,
+    decostand(select(., -sample_no), 
+              method = "total",
+              na.rm = "TRUE")
+  )
+```
+
+I will look at this for both percentage abundance data and for square-root 
+transformed percentage abundance data as I still don't know which I will be 
+using yet.
+
+
+
+
+********************************************************************************
+
+
+
+
+#### Transformation: relative abundances
+
+```{r}
+ab_t <- ord_data(abundant_taxa)
+```
+
+
+
+
+##### DCA
+
+```{r}
+ab_t_dca <- decorana(ab_t)
+ab_t_dca
+```
+
+DCA axis 1 length is <2.5 so linear methods are appropriate. 
+
+```{r}
+ab_t_pca <- rda(ab_t)
+ab_t_pca
+```
+
+
+
+
+##### PCA
+
+```{r collapse=TRUE}
+# Proportion of variance explained by PC1 and PC2
+sum((as.vector(ab_t_pca$CA$eig) / sum(ab_t_pca$CA$eig))[1:2]) * 100
+
+# Proportion of variance explained by PC1
+sum((as.vector(ab_t_pca$CA$eig) / sum(ab_t_pca$CA$eig))[1]) * 100
+
+# Proportion of variance explained by PC2
+sum((as.vector(ab_t_pca$CA$eig) / sum(ab_t_pca$CA$eig))[2]) * 100
+
+```
+
+The proportion expained by PC1 and PC2 is 77% so less than the 80% explained by 
+the first two axes when the percentages were calculated from a sum of all taxa. 
+Proportion explained by PC1 for that analysis was 64%, higher than the 59% 
+explained here.
+
+
+
+
+##### PC1 axis scores
+
+```{r message=FALSE}
+ab_t_pc1_scrs <- data.frame(scores(ab_t_pca, 
+                              choices = 1, # select only PC1
+                              display = "sites",
+                              scaling = 0)) %>%
+  mutate(sample_no = as.numeric(row.names(.))) %>%
+  right_join(imported$depths)
+```
+
+```{r}
+plot_ab_t_pc1 <- ggplot(ab_t_pc1_scrs, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(expand = c (0, 0), breaks = seq(130, 290, 10)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "Depth (m)") +
+  theme_classic(8) +
+  theme(aspect.ratio = 3) 
+
+plot_untransformed_pc1 +
+  labs(title = "Percentage abundance\n(% based on all taxa)") +
+plot_ab_t_pc1 +
+  labs(title = "Percentage abundance\n(% based on abundant taxa)")
+```
+
+The PC1 axis scores are very similar. There are a few differences that can be 
+seen if you look very carefully. These are most noticable at around 190 m to 
+210 m depth, although there are some other slight variations in other places.
+
+
+
+
+##### Biplots
+
+```{r}
+par(mfrow = c(1, 2))
+
+biplot(untransformed_pca, 
+       scaling = "none", 
+       main = "Percentage abundance\n(% based on all taxa)",
+       cex.main = 0.7)
+
+biplot(ab_t_pca, 
+       scaling = "none", 
+       main = "Percentage abundance\n(% based on abundant taxa)",
+       cex.main = 0.7)
+```
+
+If anything, there is a stronger arch effect for the percentages based on a sum 
+of only the abundant taxa.
+
+
+
+
+********************************************************************************
+
+
+
+
+#### Transformation: Hellinger (square root of relative abundances)
+
+```{r}
+ab_t_sqrt <- ord_data(abundant_taxa) %>%
+  sqrt()
+```
+
+
+
+
+##### DCA
+
+```{r}
+ab_t_sqrt_dca <- decorana(ab_t_sqrt)
+ab_t_sqrt_dca
+```
+
+DCA1 <2.5 so linear methods are appropriate.
+
+
+
+
+##### PCA
+
+```{r}
+ab_t_sqrt_pca <- rda(ab_t_sqrt)
+ab_t_sqrt_pca
+```
+
+```{r collapse=TRUE}
+# Proportion of variance explained by PC1 and PC2
+sum((as.vector(ab_t_sqrt_pca$CA$eig) / sum(ab_t_sqrt_pca$CA$eig))[1:2]) * 100
+
+# Proportion of variance explained by PC1
+sum((as.vector(ab_t_sqrt_pca$CA$eig) / sum(ab_t_sqrt_pca$CA$eig))[1]) * 100
+
+# Proportion of variance explained by PC2
+sum((as.vector(ab_t_sqrt_pca$CA$eig) / sum(ab_t_sqrt_pca$CA$eig))[2]) * 100
+
+```
+
+The percentages are very similar as for when the percentage abundance was based 
+on a sum of all taxa.
+
+
+
+
+##### PC1 axis scores
+
+```{r message=FALSE}
+ab_t_sqrt_pc1_scrs <- data.frame(scores(ab_t_sqrt_pca, 
+                              choices = 1, # select only PC1
+                              display = "sites",
+                              scaling = 0)) %>%
+  mutate(sample_no = as.numeric(row.names(.))) %>%
+  right_join(imported$depths)
+```
+
+```{r}
+plot_ab_t_sqrt_pc1 <- ggplot(ab_t_sqrt_pc1_scrs, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(expand = c (0, 0), breaks = seq(130, 290, 10)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "Depth (m)") +
+  theme_classic(8) +
+  theme(aspect.ratio = 3) 
+
+plot_sqrt_pc1 +
+  labs(title = "sqrt, % based on all taxa") +
+plot_ab_t_sqrt_pc1 +
+  labs(title = "sqrt, % based on abundant taxa")
+```
+
+There isn't much difference between the two, although it has flipped the results. 
+If I reverse the PC1 axis values for one of them then it is possible to see just 
+how similar they are:
+
+```{r}
+plot_sqrt_pc1_rev <- ggplot(sqrt_pc1_scrs, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(expand = c (0, 0), breaks = seq(130, 290, 10)) +
+  scale_y_reverse(expand = c(0, 0)) +
+  labs(x = "Depth (m)") +
+  theme_classic(8) +
+  theme(aspect.ratio = 3) 
+
+
+plot_sqrt_pc1_rev +
+  labs(title = "sqrt, % based on all taxa") +
+plot_ab_t_sqrt_pc1 +
+  labs(title = "sqrt, % based on abundant taxa")
+```
+
+The are almost identical. It is possible to see a very slight difference in the 
+values at around 220 m depth where the values do not quite reach the y-axis on 
+the right-hand plot.
+
+
+
+
+##### Biplots
+
+```{r}
+par(mfrow = c(1, 2))
+
+biplot(sqrt_pca, 
+       scaling = "none", 
+       main = "sqrt, % of all taxa",
+       cex.main = 0.7)
+
+biplot(ab_t_sqrt_pca, 
+       scaling = "none", 
+       main = "sqrt, % of ab. taxa",
+       cex.main = 0.7)
+```
+
+Plots are very similar but rotated 180 degrees.
+
+
+
+
+********************************************************************************
+
+
+
+## References
+
+Legendre, P & Birks, H. J. B. (2012) From classical to canonical ordination. In 
+Birks, H. J. B., Lotter, A. F., Juggins, S. & Smol, J. P. (eds) *Tracking *
+*Environmental Change using Lake Sediments. Volume 5: Data Handling and *
+*Numerical Techniques*. Dordrecht: Springer.
+https://doi.org/10.1007/978-94-007-2745-8_8
+
+Legendre, P. & Borcard, D. (2018) Box–Cox-chord transformations for community 
+composition data prior to beta diversity analysis. *Ecography*, 41, 1820–1824. 
+https://doi.org/10.1111/ecog.03498
+
