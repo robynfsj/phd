@@ -1,7 +1,6 @@
 # PhD data analysis and presentation: Lake Ioannina diatom record spanning MIS 7–9
 
-This repository contains the R scripts for the data analysis of the first chapter of my PhD.  Data and visualisations can't 
-be included here until they have been published.  
+This repository contains the R scripts for the data analysis of the first chapter of my PhD.
   
 Scripts:  
 [01-load.R](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/01-load.R) – reads in the data from an 
