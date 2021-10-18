@@ -18,7 +18,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 
-## 1. Introduction
+# 1. Introduction
 
 This document outlines the steps taken to split the Lake Ioannina MIS 7-9 diatom 
 record into diatom assemblage zones, and it contains the R code used to do so. 
@@ -32,7 +32,8 @@ Creating the zones involves two steps:
 1. cluster analysis  
 2. determination of the number of zones  
 
-### Clustering algorithm choice
+
+## Clustering algorithm choice
 
 A *constrained* cluster analysis is required in order to group samples together 
 that are stratigraphically adjacent. The specific cluster analysis chosen is 
@@ -55,10 +56,7 @@ samples in that cluster, which is then summed for each taxon, which is then
 summed for each sample in the cluster.*
 
 
-********************************************************************************
-
-
-## 2. Import packages and data
+# 2. Import packages and data
 
 ```{r message=FALSE}
 library(rioja) # for chclust function
@@ -69,7 +67,8 @@ source("scripts/02-manipulate.R") # import data
 source("scripts/borders-for-ggplot2.R")
 ```
 
-### A note on importing the data
+
+## A note on importing the data
 
 The data for the Ioannina MIS 7–9 analyses are stored in a single Excel workbook 
 ([ioannina.xlxs](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/data/ioannina.xlsx))
@@ -94,10 +93,7 @@ in another dataframe—**depths**, which is left unmanipulated within the
 **imported** list (i.e. `imported$depths`).
 
 
-********************************************************************************
-
-
-## 3. Prepare Data
+# 3. Prepare Data
 
 The following steps are taken to prepare the data specifically for the analyses 
 in this document:
@@ -138,7 +134,6 @@ review of the literature.
 
 4. Square-root transform the data.
 
-
 ```{r}
 coniss <- list()
 
@@ -165,10 +160,7 @@ coniss$data <- taxa$counts %>%
 ```
 
 
-********************************************************************************
-
-
-## 4. Calculate distance matrix
+# 4. Calculate distance matrix
 
 The squared Euclidean distance between samples is calculated. This dissimilarity 
 index is the one used by the Tilia program.
@@ -180,20 +172,14 @@ coniss$dist_matrix <- designdist(coniss$data,
 ```
 
 
-********************************************************************************
-
-
-## 5. Cluster analysis
+# 5. Cluster analysis
 
 ```{r}
 coniss$results <- chclust(coniss$dist_matrix, method = "coniss")
 ```
 
 
-********************************************************************************
-
-
-## 6. Determination of the number of zones
+# 6. Determination of the number of zones
 
 A broken stick model ([Bennett, 1996](#references)) is used to determine the 
 number of significant zones in the record. The plot below shows that after 
@@ -208,11 +194,7 @@ bstick(coniss$results, ng = 30)
 ```
 
 
-
-********************************************************************************
-
-
-## 7. Plot dendrogram
+# 7. Plot dendrogram
 
 ```{r fig.height=9}
 # Extract data for plotting
@@ -245,10 +227,7 @@ ggplot(segment(coniss$ddata)) +
 ```
 
 
-********************************************************************************
-
-
-## References {#references}
+# References {#references}
 
 Bennett, K. D. (1996) Determination of the number of zones in a 
 biostratigraphical sequence. *New Phytologist*, 132, 155–170. 
