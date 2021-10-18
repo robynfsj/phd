@@ -64,7 +64,7 @@
 #
 # concentration
 #   |
-#   ├ measurments — data used to calculate diatom concentrations
+#   ├ measurements — data used to calculate diatom concentrations
 #   |
 #   ├ calculated — calculated diatom concentrations for each slide
 #
