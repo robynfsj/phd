@@ -1,6 +1,5 @@
 ---
 title: "Zonation of the I-284 MIS 7–9 diatom record"
-author: "Robyn Seymour-Jones"
 output: 
   html_document:
     toc: true
@@ -20,7 +19,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 
 ## 1. Introduction
-  
+
 This document outlines the steps taken to split the Lake Ioannina MIS 7-9 diatom 
 record into diatom assemblage zones, and it contains the R code used to do so. 
 The reason for splitting the record into zones is to delineate sections of the 
@@ -32,7 +31,6 @@ Creating the zones involves two steps:
 
 1. cluster analysis  
 2. determination of the number of zones  
-
 
 ### Clustering algorithm choice
 
@@ -72,6 +70,7 @@ source("scripts/borders-for-ggplot2.R")
 ```
 
 ### A note on importing the data
+
 The data for the Ioannina MIS 7–9 analyses are stored in a single Excel workbook 
 ([ioannina.xlxs](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/data/ioannina.xlsx))
 in order to contain all the data in a single file and allow details of the data 
@@ -246,10 +245,7 @@ ggplot(segment(coniss$ddata)) +
 ```
 
 
-
 ********************************************************************************
-
-
 
 
 ## References {#references}
