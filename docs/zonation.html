@@ -262,12 +262,14 @@ div.tocify {
 </div>
 <div id="import-packages-and-data" class="section level1">
 <h1>2. Import packages and data</h1>
-<pre class="r"><code>library(rioja) # for chclust function
-library(ggdendro) # for dendro_data function
+<pre class="r"><code>library(dplyr)
 library(ggplot2)
-library(patchwork)
+library(vegan) # designdist, decostand
+library(rioja) # chclust
+library(ggdendro) # dendro_data
+
 source(&quot;scripts/02-manipulate.R&quot;) # import data
-source(&quot;scripts/borders-for-ggplot2.R&quot;)</code></pre>
+source(&quot;scripts/borders-for-ggplot2.R&quot;) # custom theme to remove borders</code></pre>
 <div id="a-note-on-importing-the-data" class="section level2">
 <h2>A note on importing the data</h2>
 <p>The data for the Ioannina MIS 7–9 analyses are stored in a single Excel workbook (<a href="https://github.com/robynfsj/phd-ioannina-long-record/blob/master/data/ioannina.xlsx">ioannina.xlxs</a>) in order to contain all the data in a single file and allow details of the data to be stored alongside them. The data are then explored through a series of R scripts. The code was split into these multiple scripts to make it easier to read and understand the code.</p>

@@ -66,12 +66,14 @@ is then summed for each sample in the cluster. \normalsize
 # 2. Import packages and data
 
 ```{r message=FALSE}
-library(rioja) # for chclust function
-library(ggdendro) # for dendro_data function
+library(dplyr)
 library(ggplot2)
-library(patchwork)
+library(vegan) # designdist, decostand
+library(rioja) # chclust
+library(ggdendro) # dendro_data
+
 source("scripts/02-manipulate.R") # import data
-source("scripts/borders-for-ggplot2.R")
+source("scripts/borders-for-ggplot2.R") # custom theme to remove borders
 ```
 
 
