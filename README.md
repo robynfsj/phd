@@ -3,7 +3,7 @@
 This repository contains the R scripts for the data analysis of the first chapter of my PhD.
 
 [Zonation](https://robynfsj.github.io/phd-ioannina-long-record/zonation.html)  
-[Ordination]()
+[Ordination]()—IN PROGRESS
 
 Scripts:  
 [01-load.R](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/01-load.R) – reads in the data from an 
@@ -17,7 +17,7 @@ reduction of the multivariate data to pick out the main trends
 [05-strat-plot.R](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/05-strat-plot.R) – plots the 
 stratigraphic diagram  
   
-REMOVE ONCE I NO LONGER NEED TO LOOK THROUGH:
+REMOVE ONCE I NO LONGER NEED TO LOOK THROUGH:  
 The following pages document some of my thought processes:  
 [Plotting dendrograms](https://robynfsj.github.io/phd-ioannina-long-record/plotting-dendrograms.html)  
 [Exploring ordination options](https://robynfsj.github.io/phd-ioannina-long-record/exploring-ordination-options.html)
