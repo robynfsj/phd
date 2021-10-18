@@ -203,7 +203,7 @@ bstick(coniss$results, ng = 30)
 
 # 7. Plot dendrogram
 
-```{r fig.align="center"}
+```{r fig.align="center", fig.height=9}
 # Extract data for plotting.
 coniss$ddata<- dendro_data(coniss$results, type = "rectangle")
 # Modify x values so leaves are plotted by depth in core rather than in 
