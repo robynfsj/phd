@@ -66,34 +66,18 @@ coniss <- list()
 
 # Prepare data for analysis
 coniss$data <- taxa$counts %>%
-  # isolate taxa present at ≥4 %
-  transmute(
-    sample_no = sample_no,
-    select(., all_of(abundant_taxa(taxa$rel_ab, 4)))
-  ) %>%
-  # convert to proportion based on only these abundant taxa
-  mutate(
-    sample_no = sample_no,
-    decostand(select(., -sample_no), 
-              method = "total",
-              na.rm = "TRUE")
-  ) %>%
   # replace sample numbers with depths
-  mutate(
-    depth = imported$depths$depth,
-    sample_no = NULL
-  ) %>%
-  # remove samples with no diatoms
+  mutate(depth = imported$depths$depth, sample_no = NULL) %>%
+  # remove samples with no diatoms and outlier with only a few diatoms
+  filter(rowSums(select(., !matches("depth"))) > 0 & depth != 175.62) %>%
+  # isolate only abundant taxa present at ≥4 % in at least one sample
   column_to_rownames("depth") %>%
-  filter(., rowSums(.) > 0) %>%
-  # square-root transform
-  sqrt() %>%
-  # remove outlier (sample with only a few diatoms)
-  rownames_to_column("depth") %>%
-  mutate(depth = as.numeric(depth)) %>%
-  slice(., -44) %>%
-  column_to_rownames("depth")
-  
+  select(all_of(abundant_taxa(taxa$rel_ab, 4))) %>%
+  # convert raw counts to proportion based on only these abundant taxa
+  decostand(method = "total", na.rm = "TRUE") %>%
+  # square-root transform data
+  sqrt()
+
 # Calculate distance matrix
 coniss$dist_matrix <- designdist(coniss$data, 
                                  method = "A+B-2*J", 
@@ -135,7 +119,7 @@ rm(new_x)
 
 # # 6.  Plot ----------------------------------------------------------------
 # # Moved to strat-plot.R
-# 
+#
 # # Create plot
 # library(ggplot2)
 # source("scripts/borders-for-ggplot2.R")
