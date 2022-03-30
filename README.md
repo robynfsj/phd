@@ -11,14 +11,17 @@ time period roughly equivalent to Marine Isotope Stages 7–9 (approximately
 ## Scripts
 
 [ioannina_read_data.R](https://github.com/robynfsj/phd/blob/master/scripts/ioannina_read_data.R) 
-– reads in the data from an Excel spreadsheet
+– reads in the data from an Excel spreadsheet  
+  
 [ioannina_zonation.R](https://github.com/robynfsj/phd/blob/master/scripts/ioannina_zonation.R) 
 – constrained incremental sum of squares (CONISS) cluster analysis to group 
 similar adjacent samples together to form diatom assemblage zones  
+  
 [ioannina_ordination.R](https://github.com/robynfsj/phd/blob/master/scripts/ioannina_ordination.R)
 – dimensionality reduction of the multivariate data to pick out the main trends  
-[ioannina_stratigraphic_diagram.R](https://github.com/robynfsj/phd/blob/master/scripts/ioannina_stratigraphic_diagram.R) 
-– plots the stratigraphic diagram 
+  
+[ioannina_stratigraphic_diagram.R](https://github.com/robynfsj/phd/blob/master/scripts/ioannina_stratigraphic_diagram.R)
+– plots the stratigraphic diagram
 
 
 ## Details of analyses
