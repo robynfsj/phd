@@ -1,5 +1,5 @@
 Worksheet,Details
-depths,Depth of each sample in the core (m)
+samples,Sample numbers (for own reference).
 mass,The amount of sediment used when creating the diatom slide (g).
 microspheres,The number of microspheres counted per sample.
 counts,"The number of each taxon counted per sample.
@@ -13,3 +13,7 @@ NA,NA
 Non-diatom data,NA
 pollen,"Depth (m), arboreal pollen (%) and arboreal pollen minus Pinus and Juniperus (%). Note data is not the most up to data version as published in Roucoux et al. 2008."
 sedimentology,"Loss on ignition (LOI) data. Depth (m), LOI (%) and CO3(%)."
+NA,NA
+Appended after R analysis,NA
+zone_boundaries,Depth (m) of diatom assemblage zone boundaries.
+zones,NA

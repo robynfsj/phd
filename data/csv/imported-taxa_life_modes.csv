@@ -26,9 +26,9 @@ Staurosirella leptostauron var. dubia,facultative planktonic
 Staurosirella leptostauron var. martyi,facultative planktonic
 Staurosirella pinnata,facultative planktonic
 Tabellaria fenestrata,facultative planktonic
-Achnthes lacurum,benthic
-Achnthidium minutissimum,benthic
-Achnthidium rosenstockii,benthic
+Achnanthes lacunarum,benthic
+Achnanthidium minutissimum,benthic
+Achnanthidium rosenstockii,benthic
 Adlafia minuscula,benthic
 Amphora copulata,benthic
 Amphora hemicycla,benthic
@@ -83,7 +83,7 @@ Encyonema silesiacum,benthic
 Encyonema spp.,benthic
 Encyonema ventricosum,benthic
 Encyonopsis microcephala,benthic
-Epithemia adta,benthic
+Epithemia adnata,benthic
 Epithemia argus,benthic
 Epithemia frickei,benthic
 Epithemia geopperti,benthic
@@ -113,8 +113,8 @@ Gomphonema pumilum,benthic
 Gomphonema sarcophagus,benthic
 Gomphonema spp.,benthic
 Gomphosphenia lingulatiformis,benthic
-Gyrosigma acumitum,benthic
-Gyrosigma attenutum,benthic
+Gyrosigma acuminatum,benthic
+Gyrosigma attenunatum,benthic
 Gyrosigma sciotoense,benthic
 Gyrosigma spp.,benthic
 Halamphora oligotraphenta,benthic
@@ -142,21 +142,21 @@ Luticola spp.,benthic
 Mastogloia elliptica,benthic
 Mastogloia ohrida,benthic
 Meridion constrictum,benthic
-vicula antonii,benthic
-vicula cari,benthic
-vicula cryptocephala,benthic
-vicula cryptofallax,benthic
-vicula cryptonella,benthic
-vicula cryptonelloides,benthic
-vicula exillis,benthic
-vicula gotlandica,benthic
-vicula hasta,benthic
-vicula pseudolanceolata,benthic
-vicula radiosa,benthic
-vicula reinhardtii,benthic
-vicula saliris var. minima,benthic
-vicula spp.,benthic
-viculoid spp.,benthic
+Navicula antonii,benthic
+Navicula cari,benthic
+Navicula cryptocephala,benthic
+Navicula cryptofallax,benthic
+Navicula cryptonella,benthic
+Navicula cryptonelloides,benthic
+Navicula exillis,benthic
+Navicula gotlandica,benthic
+Navicula hasta,benthic
+Navicula pseudolanceolata,benthic
+Navicula radiosa,benthic
+Navicula reinhardtii,benthic
+Navicula saliris var. minima,benthic
+Navicula spp.,benthic
+Naviculoid spp.,benthic
 Neidiomorpha binodis,benthic
 Neidium ampliatum,benthic
 Neidium spp.,benthic
