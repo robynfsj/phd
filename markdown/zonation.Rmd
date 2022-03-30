@@ -1,10 +1,11 @@
 ---
-title: "Zonation of the I-284 MIS 7–9 diatom record"
+title: "Zonation of the Lake Ioannina MIS 7–9 diatom record"
 output: 
-  html_document:
+  bookdown::html_document2:
     toc: true
     toc_float: true
     toc_depth: 3
+    number_sections: false
     theme: lumen
 knit: (function(input_file, encoding) {
   out_dir <- '../docs';
@@ -26,11 +27,6 @@ The reason for splitting the record into zones is to delineate sections of the
 record that share a similar diatom assemblage, helping to identify major changes 
 in the record and making it easier to describe (the results can be written up by 
 zone).
-
-Creating the zones involves two steps:  
-
-1. cluster analysis  
-2. determination of the number of zones  
 
 
 ## Clustering algorithm choice
@@ -59,40 +55,20 @@ summed for each sample in the cluster.*
 # 2. Import packages and data
 
 ```{r message=FALSE}
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 library(vegan) # designdist, decostand
 library(rioja) # chclust
 library(ggdendro) # dendro_data
 
-source("scripts/02-manipulate.R") # import data
 source("scripts/borders-for-ggplot2.R") # custom theme to remove borders
+
+imported_counts <- read.csv("data/csv/imported-counts.csv")
+taxa_life_modes <- read.csv("data/csv/imported-taxa_life_modes.csv") %>%
+  transmute(
+    taxon = taxon,
+    type = as.factor(type)
+  )
 ```
-
-
-## A note on importing the data
-
-The data for the Ioannina MIS 7–9 analyses are stored in a single Excel workbook 
-([ioannina.xlxs](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/data/ioannina.xlsx))
-in order to contain all the data in a single file and allow details of the data 
-to be stored alongside them. The data are then explored through a series of R 
-scripts. The code was split into these multiple scripts to make it easier to 
-read and understand the code. 
-
-The first R script 
-([01-load.R](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/01-load.R))
-reads in the data from the Excel workbook and assigns each worksheet to a 
-dataframe in a list entitled **imported**. The second R script 
-([02-manipulate.R](https://github.com/robynfsj/phd-ioannina-long-record/blob/master/scripts/02-manipulate.R)) 
-runs 01-load.R and subsequently manipulates the data into various forms (e.g. 
-converts raw count data to percentage abundances). The data are placed in new 
-dataframes within lists to keep similar data together.
-
-The analyses in this document use the **counts** dataframe within the **taxa** 
-list (i.e. `taxa$counts`). This simply contains the raw counts for each diatom 
-taxon by sample number. The corresponding depths to the sample numbers are kept 
-in another dataframe—**depths**, which is left unmanipulated within the 
-**imported** list (i.e. `imported$depths`).
 
 
 # 3. Prepare Data
@@ -137,91 +113,83 @@ review of the literature.
 4. Square-root transform the data.
 
 ```{r}
-coniss <- list()
-
-coniss$data <- taxa$counts %>%
-
-  # Replace sample numbers with depths.
-  mutate(depth = imported$depths$depth, sample_no = NULL) %>%
-  
-  # Remove samples with no diatoms and outlier with poor preservation.
-  filter(rowSums(select(., !matches("depth"))) > 0 & depth != 175.62) %>%
-  
-  # Isolate taxa present at ≥4%. Note that this uses a user-defined function 
-  # (abundant_taxa) that is part of the 02-manipulate.R script. It retrieves the 
-  # variable names of taxa that are present at least at the specified abundance 
-  # (here 4%) in at least one sample.
+# Get names of taxa present at ≥4%.
+abundant_taxa <- imported_counts %>%
   column_to_rownames("depth") %>%
-  select(all_of(abundant_taxa(taxa$rel_ab, 4))) %>%
-  
-  # Convert raw counts to proportion based on only these abundant taxa.
-  decostand(method = "total", na.rm = "TRUE") %>%
-  
-  # Square-root transform data.
-  sqrt()
+  decostand(method = "total", na.rm = TRUE) %>%
+  select_if(~any(. >= 0.04)) %>%
+  select(-contains("spp")) %>%
+  colnames()
+
+# Filter and transform data.  
+coniss_data <- imported_counts %>%
+  filter(rowSums(select(., !matches("depth"))) > 0 & depth != 175.62) %>%
+  column_to_rownames("depth") %>%
+  select(all_of(abundant_taxa)) %>%
+  decostand(method = "hellinger", na.rm = "TRUE") # sqrt of rel. proportions
 ```
 
 
-# 4. Calculate distance matrix
+# 4. Cluster analysis
 
-The squared Euclidean distance between samples is calculated. This dissimilarity 
-index is the one used by the Tilia program.
+Creating the zones involves three steps:  
 
-```{r}
-coniss$dist_matrix <- designdist(coniss$data, 
-                                 method = "A+B-2*J", 
-                                 terms = "quadratic")
-```
+1. Calculate a distance matrix.
+2. Run the cluster analysis.
+3. Determine the number of significant zones.
 
-
-# 5. Cluster analysis
-
-```{r}
-coniss$results <- chclust(coniss$dist_matrix, method = "coniss")
-```
-
-
-# 6. Determination of the number of zones
+First, a distance matrix of the squared Euclidean distance between samples is 
+calculated. This dissimilarity index is the one used by the Tilia program. The 
+CONISS cluster analysis is then performed on this distance matrix.
 
 A broken stick model ([Bennett, 1996](#references)) is used to determine the 
-number of significant zones in the record. The plot below shows that after 
-splitting the record into 12 groups (zones), the observed reduction in 
-within-group sum of squares (black line) drops (and remains) below that expected 
-from the broken stick model (red line). Therefore, there are 12 significant 
-zones in this record.
+number of significant zones in the record. The plot in Figure \@ref(fig:bstick) 
+shows that after splitting the record into 12 groups (zones), the observed 
+reduction in within-group sum of squares (black line) drops (and remains) below 
+that expected from the broken stick model (red line). Therefore, there are 12 
+significant zones in this record.
 
+```{r bstick, fig.cap="Comparison of the CONISS results with a broken stick model. The observed reduction in within-group sum of squares is represented by the black line and the model is represented by the red line."}
+dist_matrix <- designdist(coniss_data,
+                          method = "A+B-2*J",
+                          terms = "quadratic")
 
-```{r}
-bstick(coniss$results, ng = 30)
+coniss_results <- chclust(dist_matrix, method = "coniss")
+
+bstick(coniss_results, ng = 30)
 ```
 
 
-# 7. Plot dendrogram
+# 5. Plot results
+The results of the cluster analysis can be plotted as a dendrogram (Figure 
+\@ref(fig:dend)).
 
-```{r fig.height=9}
+```{r dend, fig.height=7, fig.cap="Dendrogram of CONISS results. The vertical dashed line indicates the total sum of squares value that splits the record into the 12 significant zone. The horizonal grey lines delineate the resulting zones."}
 # Extract data for plotting
-coniss$ddata<- dendro_data(coniss$results, type = "rectangle")
+ddata<- dendro_data(coniss_results, type = "rectangle")
 # Modify x values so leaves are plotted by depth in core rather than in 
 # sequential order
-new_x <- approxfun(coniss$ddata$labels$x, 
-                   as.numeric(as.character(coniss$ddata$labels$label))) 
-coniss$ddata$segments$x <- new_x(coniss$ddata$segments$x)
-coniss$ddata$segments$xend <- new_x(coniss$ddata$segments$xend)
+new_x <- approxfun(ddata$labels$x, 
+                   as.numeric(as.character(ddata$labels$label))) 
+ddata$segments$x <- new_x(ddata$segments$x)
+ddata$segments$xend <- new_x(ddata$segments$xend)
 
 # Create plot
-ggplot(segment(coniss$ddata)) +
+ggplot(segment(ddata)) +
+    geom_vline(xintercept = c(156.02, 163.22, 177.62, 190.42, 199.22, 215.22, 
+                              233.62, 253.62, 258.42, 275.22, 279.22),
+               colour = "lightgrey") +
   geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
   coord_flip() +
-  scale_y_continuous(expand = c(0, 0)) +
-  scale_x_reverse(breaks = NULL,
-                  labels = NULL) +
-  labs(x = "",
+  scale_y_continuous() +
+  scale_x_reverse(breaks = seq(135, 285, 5)) +
+  labs(x = "Depth (m)",
        y = "Total sum of squares") +
-  theme_bw(20) +
+  theme_bw(10) +
   theme(aspect.ratio = 3,
         legend.position = "none",
         panel.grid = element_blank(),
-        panel.border = theme_border("bottom"),
+        panel.border = theme_border(c("left", "bottom")),
         panel.background = element_rect(fill = "transparent"),
         plot.background = element_rect(fill = "transparent")) +
   geom_hline(yintercept = 14,

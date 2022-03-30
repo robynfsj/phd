@@ -1,0 +1,711 @@
+---
+title: "Ordination of the Lake Ioannina MIS 7–9 diatom record"
+output: 
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: false
+    theme: lumen
+knit: (function(input_file, encoding) {
+  out_dir <- '../docs';
+  rmarkdown::render(input_file,
+  encoding = encoding,
+  output_file = file.path(dirname(input_file), out_dir, 'ordination.html'))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+
+# 1. Introduction
+
+This document outlines the ordination analyses of the Lake Ioannina I-284 core 
+diatom record. Ordination is an exploratory technique that rotates the data in 
+order to identify the gradients of greatest variation. It is done here to pick 
+out these gradients and to see if any underlying latent environmental variables 
+responsible for the variation can be identified.
+
+
+# 2. Import packages and data
+
+```{r message=FALSE}
+library(tidyverse)
+library(tidypaleo)
+library(patchwork)
+library(knitr)
+library(vegan)
+
+imported_counts <- read_csv("data/csv/imported-counts.csv")
+zones <- read_csv("data/csv/imported-zones.csv")
+```
+
+
+# 3. Ordination of relative abundance data
+
+## 3.1 Prepare data
+
+The analyses are performed on only abundant taxa present at ≥4% in at least one 
+sample. This removes the influence of very rare taxa, the abundances of which 
+are poorly estimated.
+
+```{r}
+# Get names of abundant taxa.
+abundant_taxa <- imported_counts %>%
+  column_to_rownames("depth") %>%
+  decostand(method = "total", na.rm = TRUE) %>%
+  select_if(~any(. >= 0.04)) %>%
+  select(-contains("spp")) %>%
+  colnames()
+
+# Filter and transform data.  
+ord_data <- imported_counts %>%
+  filter(rowSums(select(., !matches("depth"))) > 0 & depth != 175.62) %>%
+  column_to_rownames("depth") %>%
+  select(all_of(abundant_taxa)) %>%
+  decostand(method = "total", na.rm = "TRUE") * 100
+```
+
+## 3.2 DCA
+
+Following the approach of [Leps and Smilauer (2003)](#references), a preliminary 
+detrended correspondence analysis (DCA) is first performed in order to determine 
+the most appropriate ordination method for these data based on whether the 
+species responses to the latent variables are linear or unimodal. If the DCA 
+indicates that the species responses are unimodal, the DCA is deemed appropriate. 
+If the DCA indicates that the species responses are linear, the linear 
+ordination method of principal component analysis (PCA) is more appropriate for 
+the data.
+
+The results of the DCA are displayed in Table \@ref(tab:dcaresults). At 
+less than three standard deviation units, the length of the longest axis (DCA1) 
+indicates linear species responses as a result of low beta diversity (species 
+turnover). A linear-based ordination is therefore most appropriate for these 
+data.
+
+```{r dcaresults}
+# Run DCA.
+dca <- decorana(ord_data)
+
+# Extract results.
+dca_results <- tibble(
+  "Axis" = c("DCA1", "DCA2", "DCA3", "DCA4"),
+  "Eigenvalues" = dca$evals,
+  "Decorana values" = dca$evals.decorana,
+  "Axis lengths" = apply(scores(dca), 2, max) - apply(scores(dca), 2, min)
+  )
+
+# Plot table.
+kable(dca_results, caption="Summary results of the DCA performed on the Lake Ioannina core I-284 diatom assemblage relative species abundances.")
+```
+
+## 3.3 PCA
+
+As linear ordination methods are most appropriate, a principal component 
+analysis (PCA) is performed. The results are displayed in Table 
+\@ref(tab:pcaresults). A large proportion of the variance is explained by the 
+first two principal component axes, which can be plotted as a biplot 
+(Figure \@ref(fig:biplot)).
+
+```{r pcaresults}
+# Run PCA.
+pca <- rda(ord_data)
+
+# Extract results.
+pca_results <- tibble(
+  "Axis" = c("PC1", "PC2", "PC3", "PC4"),
+  "Eigenvalues" = pca$CA$eig[1:4],
+  "Cumulative percentage variance explained" = c(
+    signif(sum((as.vector(pca$CA$eig) / sum(pca$CA$eig))[1]) * 100, 4),
+    signif(sum((as.vector(pca$CA$eig) / sum(pca$CA$eig))[1:2]) * 100, 4),
+    signif(sum((as.vector(pca$CA$eig) / sum(pca$CA$eig))[1:3]) * 100, 4),
+    signif(sum((as.vector(pca$CA$eig) / sum(pca$CA$eig))[1:4]) * 100, 4)
+  )
+)
+
+# Plot table.
+kable(pca_results, caption="Summary results of the PCA performed on the Lake Ioannina core I-284 diatom assemblage relative species abundances.")
+```
+
+```{r biplot, fig.height=7.5, fig.width=12, fig.cap="Biplot of the first two principal component axes from the PCA of the Lake Ioannina diatom record. Samples are plotted as points. Selected taxa are displayed with their axis scores scaled by eigenvalues so that the angles between the arrows represent species correlations and demonstrate which species tend to co-occur together."}
+# Provide names of select taxa to plot (need to be in original order).
+pca_taxa <- c("Pantocsekiella minuscula",
+              "Pantocsekiella ocellata",
+              "Stephanodiscus parvus",
+              "Pseudostaurosira brevistriata",
+              "Staurosira venter",
+              "Staurosirella pinnata",
+              "Amphora pediculus",
+              "Diploneis marginestriata",
+              "Encyonopsis microcephala",
+              "Gomphonema pumilum",
+              "Placoneis balcanica",
+              "Sellaphora rotunda")
+
+text_positions <- c(1, 3, 3, 2, 4, 4, 4, 4, 4, 2, 2, 3)
+
+# Create labels for plot.
+labels <- c(expression(italic("Pantocsekiella minuscula")),
+            expression(italic("Pantocsekiella \n ocellata")),
+            expression(italic("Stephanodiscus parvus")),
+            expression(italic("Pseudostaurosira brevistriata")),
+            expression(paste(italic("Staurosira construens"),
+                             " var. ", 
+                             italic("venter"))),
+            expression(italic("Staurosirella pinnata")),
+            expression(italic("Amphora pediculus")),
+            expression(italic("Diploneis marginestriata")),
+            expression(italic("Encyonopsis microcephala")),
+            expression(italic("Gomphonema pumilum")),
+            expression(italic("Placoneis balcanica")),
+            expression(italic("Sellaphora rotunda")))
+
+# Obtain PC1 and PC2 axis scores.
+all_scrs <- scores(pca, display = c("sites", "species"), scaling = 2)
+
+# Put axis scores in separate dataframes.
+species_scrs <- all_scrs$species %>%
+  as.data.frame() %>%
+  rownames_to_column("taxon") %>%
+  # Plot only some species to make it neater.
+  filter(taxon %in% pca_taxa)
+
+sites_scrs <- all_scrs$sites %>%
+  as.data.frame() %>%
+  rownames_to_column("depth")
+
+# Plot blank axes.
+xlim <- range(all_scrs[["species"]][,1], all_scrs[["sites"]][,1])
+ylim <- range(all_scrs[["species"]][,2], all_scrs[["sites"]][,2])
+plot.new()
+plot.window(xlim = xlim, ylim = ylim, asp = 1)
+abline(h = 0, lty = "dotted")
+abline(v = 0, lty = "dotted")
+axis(side = 1)
+axis(side = 2)
+title(xlab = "PC1", ylab = "PC2")
+box()
+
+# Plot sites.
+points(sites_scrs$PC2~sites_scrs$PC1,
+       pch = 19,
+       cex = 0.75,
+       col = "gray65")
+
+# Plot arrows for selected taxa.
+arrows(0, 0, species_scrs$PC1, species_scrs$PC2,
+       length = 0.05,
+       angle = 30,
+       col = "gray25")
+
+# Plot names of selected taxa.
+text(species_scrs$PC2~species_scrs$PC1,
+     labels = labels,
+     cex = 0.8,
+     col = "gray25",
+     pos = text_positions,
+     font=4)
+```
+
+However, a comparison of the results with a broken stick model indicates that 
+the first three principal components are significant (Figure 
+\@ref(fig:pcabstick)).
+
+```{r pcabstick, fig.cap="Comparison of observered reduction in variance with a broken stick model."}
+screeplot(pca, bstick = TRUE, type = "l", main = NULL)
+```
+
+The axis scores of these principal components can be plotted by depth to explore 
+variation through the core (Figure \@ref(fig:sigaxesdepth)).
+
+```{r sigaxesdepth, fig.cap="Significant principal component axes scores plotted by core depth."}
+sig_axes <- data.frame(scores(pca,
+                              choices = c(1, 2, 3),
+                              display = "sites",
+                              scaling = 0)) %>%
+  mutate(depth = as.numeric(row.names(.)))
+
+plot_pc1 <- ggplot(sig_axes, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = "Depth (m)",
+       y = "PC1 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+plot_pc2 <- ggplot(sig_axes, aes(x = depth, y = PC2)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = element_blank(),
+       y = "PC2 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
+plot_pc3 <- ggplot(sig_axes, aes(x = depth, y = PC3)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = element_blank(),
+       y = "PC3 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
+plot_pc1 + plot_pc2 + plot_pc3
+```
+
+## 3.4 Interpretation of princpal components
+
+Variation in the principal component axis 1 (PC1) scores across the samples is 
+driven by the relative abundance of *Pantocsekiella ocellata*. This taxon plots 
+at an extremely low value on PC1, while all other taxa have relatively high PC1 
+axis scores (Figure \@ref(fig:biplot)). Furthermore, the *P*. *ocellata* species 
+arrow almost exactly aligns with PC1 (Figure \@ref(fig:biplot)), demonstrating 
+that it is highly correlated with this axis and resulting in the PC1 axis scores 
+of the samples almost exactly reflecting the relative abundance of this taxon 
+(Figures \@ref(fig:pc1ocellata) & \@ref(fig:biplotpc1poc)). Correlation analysis 
+confirms there is a significant, strong, negative association between the 
+relative abundance of *P*. *ocellata* and PC1 axis scores (*ρ* = -0.999, *p* 
+< 0.001).
+
+Whilst this emphasises the dominance of *P*. *ocellata* in the record, it means 
+that PC1 offers no new information that could be useful for making 
+interpretations of change in the diatom assemblage. As *P*. *ocellata* is 
+eurytopic and there are no other taxa that have much of an influence on PC1 axis 
+scores suggesting an environmental parameter that could be driving the variation 
+along PC1 is difficult. PC2 and PC3 axis scores are also each highly influenced 
+by a single taxon, *P*. *minuscula* and *S*. *parvus* respectively. 
+
+An ordination performed on transformed data that reduces the influence of the very 
+dominant taxa should be able to better pick out variation in moderately abundant 
+taxa and identify if any tend to co-occur with the dominant ones. This could 
+provide more information on drivers of variation in the record than examining 
+variation in one dominant taxon can allow and better enable the identification 
+of latent environmental variables that are driving change in the assemblage. 
+
+```{r pc1ocellata, fig.width=3, fig.cap="Comparison of the percentage relative abundances of *P*. *ocellata* with PC1 axis scores."}
+plot_ocellata <- ord_data %>%
+  rownames_to_column("depth") %>% 
+  transmute(
+    depth = as.numeric(depth),
+    ocellata = `Pantocsekiella ocellata`
+  ) %>%
+  ggplot(aes(x = depth, y = ocellata, group = 1)) + 
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) + 
+  labs(x = "Depth (m)",
+       y = "P. ocellata (%)") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+plot_pc1_reversed <- ggplot(sig_axes, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_reverse(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = "",
+       y = "PC1 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
+plot_ocellata + plot_pc1_reversed
+
+```
+
+```{r biplotpc1poc, collapse=TRUE, fig.show="hold", fig.cap="Relationship between *P*. *ocellata* abundance and PC1 axis scores across all samples."}
+sig_axes$poc <- ord_data$`Pantocsekiella ocellata`
+
+ggplot(sig_axes, aes(x = poc, y = PC1)) + 
+  geom_point() +
+  labs(x = "P. ocellata (%)") +
+  theme_minimal()
+
+# Test for normality
+# ------------------
+# Null hypothesis - distribution is not different from normal distribution
+shapiro.test(sig_axes$poc) # p ≤ 0.05, reject null hypothesis
+shapiro.test(sig_axes$PC1) # p ≤ 0.05, reject null hypothesis
+# Shapiro-Wilk test confirms non-normally distributed data.
+# Must use non-parametric test.
+
+# Spearmans's rank correlation
+# ----------------------------
+# Null hypothesis - there is no association
+cor.test(sig_axes$PC1, sig_axes$poc, 
+         method = "spearman", 
+         exact = FALSE)
+# p ≤ 0.05, reject null hypothesis
+```
+
+## 3.5 Summary
+
+A preliminary DCA on relative species abundances identified linear species 
+responses and so a PCA was performed. Three significant principal component axes 
+were identified, however they are each heavily influenced by the relative 
+abundance of an individual taxon. Therefore, they do not provide any new 
+information, other than to highlight the dominance of these individual taxa in 
+the diatom assemblage, particularly *Panktocsekiella* *ocellata*. Transforming 
+the data to reduce the influence of the very dominant taxa should improve the 
+results. This is performed in the section that follows.
+
+
+# 4. Ordination of transformed data
+
+## 4.1 Choice of transformation
+
+A square-root transformation of the relative species abundances (the combined 
+process of which is known as the Hellinger transformation) was chosen as a 
+compromise in order to reduced the influence of the very dominant taxa without 
+up-weighting very rare taxa. It has an additional benefit over using relative 
+species abundances in that it is not affected by the undesirable double zero 
+problem whereby the absence of a taxon from two samples is considered a sign of 
+similarity [Legendre and Gallagher (2001)](#references). Although not detailed 
+here, a log transformation produced similar results.
+
+## 4.2 DCA
+
+Although it is technically not necessary to perform an initial DCA on data that 
+has been transformed in this way 
+([Legendre and Gallagher (2001); Zelený, 2019](#references)), the results of a 
+DCA are provided in Table \@ref(tab:sqrtdcaresults) for clarity. The short 
+length of the longest axis confirms that that a linear ordination method is 
+appropriate.
+
+```{r sqrtdcaresults}
+# Run DCA.
+dca <- decorana(sqrt(ord_data))
+
+# Extract results.
+dca_results <- tibble(
+  "Axis" = c("DCA1", "DCA2", "DCA3", "DCA4"),
+  "Eigenvalues" = dca$evals,
+  "Decorana values" = dca$evals.decorana,
+  "Axis lengths" = apply(scores(dca), 2, max) - apply(scores(dca), 2, min)
+  )
+
+# Plot table.
+kable(dca_results, caption="Summary results of the DCA performed on square-root transformed relative species abundances.")
+```
+
+## 4.3 PCA
+
+The results of the PCA performed on square-root transformed species abundances 
+are displayed in Table \@ref(tab:sqrtpcaresults).
+
+```{r sqrtpcaresults}
+# Run PCA.
+sqrt_pca <- rda(sqrt(ord_data))
+
+# Extract results.
+sqrt_pca_results <- tibble(
+  "Axis" = c("PC1", "PC2", "PC3", "PC4"),
+  "Eigenvalues" = sqrt_pca$CA$eig[1:4],
+  "Cumulative percentage variance explained" = c(
+    signif(sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1]) * 100, 4),
+    signif(sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1:2]) * 100, 4),
+    signif(sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1:3]) * 100, 4),
+    signif(sum((as.vector(sqrt_pca$CA$eig) / sum(sqrt_pca$CA$eig))[1:4]) * 100, 4)
+  )
+)
+
+# Plot table.
+kable(sqrt_pca_results, caption="Summary results of the PCA performed on square-root transformed relative species abundances.")
+```
+
+The first two principal component axes can be plotted by as a biplot (Figure \@ref(fig:sqrtbiplot)).
+
+```{r sqrtbiplot, fig.height=15, fig.width=12, fig.cap="Biplots of PC1 and PC2 axis scores from the PCA. The top plot displays the species scores while the bottom plot displays the samples by DAZ. Species scores are scaled by eigenvalues so that the angles between the arrows represent species correlations."}
+par(mfrow = c(2, 1))
+
+# PLOT 1 - TAXA
+
+# Provide names of select taxa to plot.
+pca_taxa <- c("Actinocyclus normanii",
+              "Asterionella formosa",
+              "Aulacoseira granulata",
+              "Pantocsekiella minuscula",
+              "Pantocsekiella ocellata",
+              "Stephanodiscus parvus",
+              "Pseudostaurosira brevistriata",
+              "Staurosira venter",
+              "Staurosirella pinnata",
+              "Achnanthes lacunarum",
+              "Amphora pediculus",
+              "Cavinula scutelloides",
+              "Diploneis marginestriata",
+              "Encyonopsis microcephala",
+              "Gomphonema pseudotenellum",
+              "Gomphonema pumilum",
+              "Placoneis balcanica",
+              "Sellaphora rotunda")
+
+# Create labels for plot.
+labels <- c(expression(italic("Actinocyclus normanii")),
+            expression(italic("Asterionella formosa")),
+            expression(italic("Aulacoseira granulata")),
+            expression(italic("Pantocsekiella minuscula")),
+            expression(italic("Pantocsekiella ocellata")),
+            expression(italic("Stephanodiscus parvus")),
+            expression(italic("Pseudostaurosira brevistriata")),
+            expression(paste(italic("Staurosira construens"),
+                             " var. ",
+                             italic("venter"))),
+            expression(italic("Staurosirella pinnata")),
+            expression(italic("Achnanthes lacunarum")),
+            expression(italic("Amphora pediculus")),
+            expression(italic("Cavinula scutelloides")),
+            expression(italic("Diploneis marginestriata")),
+            expression(italic("Encyonopsis microcephala")),
+            expression(italic("Gomphonema pseudotenellum")),
+            expression(italic("Gomphonema pumilum")),
+            expression(italic("Placoneis balcanica")),
+            expression(italic("Sellaphora rotunda")))
+
+# Assign label positions.
+text_positions <- c(2, 4, 4, 1, 2, 3, 4, 4, 1, 4, 1, 4, 1, 1, 1, 2, 4, 4)
+
+# Obtain PC1 and PC2 axis scores.
+all_scrs <- scores(sqrt_pca, display = c("sites", "species"), scaling = 2)
+
+# Put axis scores in separate dataframes.
+species_scrs <- all_scrs$species %>%
+  as.data.frame() %>%
+  rownames_to_column("taxon") %>%
+  # Plot only some species to make it neater.
+  filter(taxon %in% pca_taxa)
+
+sites_scrs <- all_scrs$sites %>%
+  as.data.frame() %>%
+  rownames_to_column("depth")
+
+# Plot blank axes.
+xlim <- range(all_scrs[["species"]][,1], all_scrs[["sites"]][,1])
+ylim <- range(all_scrs[["species"]][,2], all_scrs[["sites"]][,2])
+plot.new()
+plot.window(xlim = xlim, ylim = ylim, asp = 1)
+abline(h = 0, lty = "dotted")
+abline(v = 0, lty = "dotted")
+axis(side = 1)
+axis(side = 2)
+title(xlab = "PC1", ylab = "PC2")
+box()
+
+# Plot sites.
+points(sites_scrs$PC2~sites_scrs$PC1,
+       pch = 19,
+       cex = 0.75,
+       col = "gray80")
+
+# Plot arrows of selected taxa.
+arrows(0, 0, species_scrs$PC1, species_scrs$PC2,
+       col = "gray50",
+       length = 0.05,
+       angle = 30)
+
+# Plot names of selected taxa.
+text(species_scrs$PC2~species_scrs$PC1,
+     labels = labels,
+     cex = 0.8,
+     col = "black",
+     pos = text_positions)
+
+
+# PLOT 2 - SAMPLES BY DAZ
+
+# Assign zones to site scores.
+sites_scrs_daz <- sites_scrs %>%
+  merge(zones, by = "depth") %>%
+  mutate(daz = as.factor(daz))
+
+# Plot blank axes.
+xlim <- range(all_scrs[["species"]][,1], all_scrs[["sites"]][,1])
+ylim <- range(all_scrs[["species"]][,2], all_scrs[["sites"]][,2])
+plot.new()
+plot.window(xlim = xlim, ylim = ylim, asp = 1)
+abline(h = 0, lty = "dotted")
+abline(v = 0, lty = "dotted")
+axis(side = 1)
+axis(side = 2)
+title(xlab = "PC1", ylab = "PC2")
+box()
+
+# Plot samples by DAZ as points.
+points(sites_scrs_daz$PC2~sites_scrs_daz$PC1,
+       col = c("red3",
+               "orangered3",
+               "darkorange3",
+               "darkgoldenrod3",
+               "yellowgreen",
+               "olivedrab4",
+               "seagreen",
+               "turquoise4",
+               "steelblue4",
+               "slateblue3",
+               "purple3",
+               "violet")[as.factor(sites_scrs_daz$daz)],
+       pch = c(0,1,2,3,4,5,6,8,15,16,17,18)[as.factor(sites_scrs_daz$daz)])
+
+
+# Plot legend for points.
+legend("topleft",
+       legend = levels(sites_scrs_daz$daz),
+       title = "DAZ",
+       bty = 1,
+       col = c("red3",
+               "orangered3",
+               "darkorange3",
+               "darkgoldenrod3",
+               "yellowgreen",
+               "olivedrab4",
+               "seagreen",
+               "turquoise4",
+               "steelblue4",
+               "slateblue3",
+               "purple3",
+               "violet"),
+       pch = c(0,1,2,3,4,5,6,8,15,16,17,18))
+```
+
+A comparison of the results with a broken stick model indicates that the first 
+three principal components are significant (Figure \@ref(fig:sqrtpcabstick)).
+
+```{r sqrtpcabstick, fig.cap="Comparison of observered reduction in variance with a broken stick model."}
+screeplot(sqrt_pca, bstick = TRUE, type = "l", main = NULL)
+```
+
+The axis scores of the samples for the three significant principal components 
+have been plotted by depth to explore variation through the core (Figure \@ref(fig:sqrtsigaxesdepth)).
+
+```{r sqrtsigaxesdepth, fig.cap="Significant principal component axes scores plotted by core depth."}
+sig_axes <- data.frame(scores(sqrt_pca,
+                              choices = c(1, 2, 3),
+                              display = "sites",
+                              scaling = 0)) %>%
+  mutate(depth = as.numeric(row.names(.)))
+
+plot_pc1 <- ggplot(sig_axes, aes(x = depth, y = PC1)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = "Depth (m)",
+       y = "PC1 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+
+plot_pc2 <- ggplot(sig_axes, aes(x = depth, y = PC2)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = element_blank(),
+       y = "PC2 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
+plot_pc3 <- ggplot(sig_axes, aes(x = depth, y = PC3)) +
+  geom_line() +
+  coord_flip() +
+  scale_x_reverse(breaks = seq(120, 290, 20)) +
+  scale_y_continuous(breaks = seq(-0.4, 0.6, 0.1)) +
+  labs(x = element_blank(),
+       y = "PC3 axis score") +
+  theme_minimal(10) +
+  theme(
+    panel.grid.major = element_line(colour = "gray 95"),
+    panel.grid.minor = element_line(colour = "gray 96"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank())
+
+plot_pc1 + plot_pc2 + plot_pc3
+```
+
+The axis scores of the samples for the three signigicant principal components 
+are also displayed in Figure \@ref(fig:sqrtspeciesscrs).
+
+```{r sqrtspeciesscrs, fig.cap="Ordering of taxa along principal components."}
+par(mfrow=c(1,3)) 
+ordiplot(sqrt_pca, choices = 1, display = "species")
+ordiplot(sqrt_pca, choices = 2, display = "species")
+ordiplot(sqrt_pca, choices = 3, display = "species")
+```
+
+## 4.4 Interpretion of the significant principal components
+
+Samples with high abundances of *P*. *minuscula* have low scores on PC1 while 
+those with high abundances of Fragilariaceae have high PC1 axis scores. *P*. 
+*minuscula* is able to tolerate low light and nutrient availability and has 
+also been associated with stable, stratified lake conditions. The Fragilariaceae 
+are considered pioneer taxa, tolerant of cold, turbulent and turbid conditions. 
+It would seem that the distinguishing feature is the degree of water mixing 
+that they represent.  
+
+*P*. *minuscula*, the Fragilariaceae and benthic taxa associated with 
+macrophytes in the shallow littoral zone (e.g. *Encyonopsis* spp. and 
+*Gomphonema* spp.) have the lowest PC2 axis scores while *P*. *ocellata* has the 
+highest. A number of mesotrophic-eutrophic taxa also plot quite highly along 
+PC2, suggesting variation along this axis could reflect nutrient availability. 
+However, eurytopic *P*. *ocellata* has the largest influence on this axis, which 
+makes interpretation difficult.
+
+PC3 is once again strongly influenced by *S*. *parvus*.
+
+
+# 5. Summary
+
+Ordination of the relative abundance data of the I-284 core produced results
+that did not aid interpretation of the diatom record. Subsequent ordination
+methods applied to square root transformed data revealed three significant
+principal components. PC1 appears to reflect the mixing regime of the lake,
+PC2 is largely driven by eurytopic *P*. *ocellata* and appears to reflect lake 
+level or slight nutrient shifts, but it is difficult to interpret because of 
+this taxon’s wide environmental preferences. PC3 mainly reflects *S*. *parvus* 
+abundance.
+
+
+# References
+
+Legendre, P. & Gallagher, E. D. (2001) *Ecologically meaningful transformations *
+*for ordination of species data*. Oecologia, 129, 271–280.
+
+Leps, J. & Smilauer, P. (2003) *Multivariate Analysis of Ecological Data using *
+*CANOCO*. Cambridge: Cambridge University Press.
+
+Zelený, D (2019) *Analysis of community ecology data in R: common confusions and mistakes*. Available online: https://www.davidzeleny.net/anadat-r/doku.php/en:confusions 
+[Accessed 2021-12-03]
