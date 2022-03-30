@@ -26,10 +26,10 @@ similar adjacent samples together to form diatom assemblage zones
 
 ## Details of analyses
 
-[Determining the number of diatom valves to count per sample of the Lake Ioannina MIS 7–9 diatom record]()
+[Determining the number of diatom valves to count per sample of the Lake Ioannina MIS 7–9 diatom record]() - TODO: review markdown file and publish
 
 [Zonation of the Lake Ioannina diatom data](https://robynfsj.github.io/phd/zonation.html)  
 
 [Ordination of the Lake Ioannina MIS 7–9 diatom data](https://robynfsj.github.io/phd/ordination.html)
 
-[Numerical analyses of the Lake Ohrid MIS 7 diatom data]()
+[Numerical analyses of the Lake Ohrid MIS 7 diatom data]() - TODO: add Ohrid data and scripts to repo, then review markdown file and publish
