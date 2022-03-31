@@ -26,7 +26,7 @@ similar adjacent samples together to form diatom assemblage zones
 
 ## Details of analyses
 
-[Determining the number of diatom valves to count per sample of the Lake Ioannina MIS 7–9 diatom record]() - TODO: review markdown file and publish
+[Determining the number of diatom valves to count per sample of the Lake Ioannina MIS 7–9 diatom record](https://robynfsj.github.io/phd/count-justification.html) - TODO: review markdown file and publish
 
 [Zonation of the Lake Ioannina diatom data](https://robynfsj.github.io/phd/zonation.html)  
 

@@ -1,0 +1,628 @@
+---
+title: "Determining the number of diatom valves to count per sample of the Lake Ioannina MIS 7–9 diatom record"
+output: 
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: false
+    theme: lumen
+knit: (function(input_file, encoding) {
+  out_dir <- '../docs';
+  rmarkdown::render(input_file,
+  encoding = encoding,
+  output_file = file.path(dirname(input_file), out_dir, 'count-justification.html'))})
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+
+# 1. Introduction
+
+It is necessary to decide upon the minimum number of diatom valves to count per 
+sample so as to achieve an acceptable level of accuracy whilst optimising 
+efficiency. This document reports on the analyses undertaken to determine how 
+many diatom valves should be counted per sample of the Lake Ioannina MIS 7-9 
+diatom record.
+
+[Battarbee (1986)](#references) explains that the number of diatom valves that 
+should be counted per sample varies according to the purpose of the analysis and 
+the ability to achieve statistical precision, the latter being a function of the 
+structure of the diatom assemblage itself (e.g. a sample dominated by a single 
+taxon would require a higher count in order for low numbers of rare taxa to be 
+statistically reliable). Based on the relationship between the change in 
+percentage abundance of individual taxa and the number of valves counted, 
+[Battarbee (1986)](#references) goes on to recommend a count of 300–600 valves 
+per sample for routine analyses. There has been no change to this recommended 
+count over the years; [Battarbee et al. (2001)](#references) also recommend a 
+count of 300–600 valves per sample for most analyses, and this has remained the 
+standard practice across palaeolimnological investigations. 
+
+However, there have been some further attempts to identify the minimum number of 
+valves required to produce an adequate result for specific lakes/regions or to 
+address specific questions. For example, using the efficiency metric of 
+[Pappas and Stoermer (1996)](#references), which represents the probability of 
+encountering a new species as the count progresses, 
+[Bate and Newall (2001)](#references) concluded that a count of 200 valves was 
+sufficient for bioassessment of water quality in the Kiewa River catchment, 
+Australia. (A short review of various counts used specifically for the 
+assessment of environmental quality is provided by 
+[Stevenson et al. (2010)](#references)). In another example, a minimum count of 
+300 valves has been shown to be adequate for palaeolimnological studies in 
+tropical systems even with diverse assemblages 
+([Soeprobowati et al., 2016](#references)). Similarly, a 300-valve count was 
+adequate for most samples of a Late Quaternary diatom record from Lake Hayk, 
+Ethiopia [(Loakes, 2016; Loakes et al. 2018)](#references). In contrast, 
+previous diatom analyses at Lake Ioannina have used a minimum count of 500 
+valves per sample without justifying why this number was chosen, other than 
+stating that the preservation allowed it (
+[Wilson et al., 2008](#references); [Jones, 2010](#references); 
+[Wilson et al., 2013](#references); [Wilson et al., 2015](#references);
+[Wilson et al., 2021](#references)). The analyses here will investigate whether 
+500 valves is actually the optimum number for the Lake Ioannina sediments in 
+order to balance accuracy and counting efficiency or whether a different number 
+of valves is preferable.
+
+Two types of data have been collected:
+
+* Detailed counts were obtained for three slides chosen at random, whereby the 
+taxon name of each valve was recorded in the order it was counted. 
+
+* An initial low-resolution "skeleton" record of 15 samples was counted to gain 
+some early insights into what the diatom record would look like. Based on 
+previous diatom analyses of the I-284 core, a minimum of 500 valves were counted 
+for each of these samples. As it was thought that the full count of 500 valves 
+might not be necessary, these counts were tallied at three stages: after 300, 
+400 and 500 valves had been counted.
+
+
+# 2. Import packages and data
+
+```{r message=FALSE}
+library(readxl)
+library(purrr)
+library(readr)
+library(tools)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Create function that reads in a worksheet from an excel file then writes
+# it to csv for longevity.
+read_then_csv <- function(sheet, path) {
+  path %>%
+    read_excel(sheet = sheet) %>%
+    write_csv(paste0("data/csv/imported-", sheet, ".csv"))
+}
+
+# Execute function and iterate over all worksheets in excel file.
+path <- "data/count-justification-data.xlsx"
+
+imported <- path %>%
+  excel_sheets() %>%
+  set_names() %>%
+  map(read_then_csv, path = path)
+
+# Set ggplot theme.
+theme_set(theme_minimal())
+theme_update(
+  legend.box.background = element_rect(fill = "white",
+                                       colour = "lightgrey"),
+  legend.key.height = unit(0.4, "cm"),
+  legend.key.width = unit(1, "cm")
+)
+```
+
+
+# 3. Analyses
+
+Two types of data exploration have been performed on these data:
+
+* how relative abundances of individual taxa vary as the number of valves counted is increased.
+
+* how relative abundances each life mode (planktonic, facultative planktonic and benthic) varies as the number of valves counted is increased.
+
+## 3.1 Individual taxa
+
+These analyses investigate whether the percentage relative abundances of 
+selected taxa vary as the valve count is increased. This is the same analysis 
+that [Battarbee (1986)](#references) used to illustrate that 300 to 600 valves 
+should be counted per sample. It is helpful to perform this analysis on the 
+I-284 data as there could be an underlying assemblage structure specific to the 
+Ioannina diatom assemblage that influences the point at which the abundances 
+stabilise, which would dictate whether the lower or higher end of the 
+recommended range should be used here.
+
+### 3.1.1 Breakdown of results per valve counted
+
+As figures \@ref(fig:s17taxa), \@ref(fig:s33taxa) and \@ref(fig:s529taxa) 
+demonstrate, there is some movement in the percentage relative abundances as the 
+count progresses right up to 500 valves. However, between counts of 300 and 500 
+valves, these movements are very small, on the order of a few percentage points. 
+The point at which the percentages stabilise varies across samples with sample 
+529 requiring the largest count before stabilising (Figure \@ref(fig:s529taxa)). 
+
+#### Sample 17
+
+```{r s17taxa, fig.cap="Variation in the percentage relative abundance of selected taxa as the number of valves counted is increased for I-284 core sample 17 (141.22 m)."}
+imported$s_17 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", 
+                     "p_oc_pc", 
+                     "p_brev_pc", 
+                     "s_con_pc", 
+                     "s_pin_pc", 
+                     "a_ped_pc", 
+                     "s_rot_pc"))) %>%
+  pivot_longer(., all_of(c("p_oc_pc", 
+                           "p_brev_pc", 
+                           "s_con_pc", 
+                           "s_pin_pc", 
+                           "a_ped_pc", 
+                           "s_rot_pc")),
+               names_to = "taxon",
+               names_transform = list(taxon = as.factor),
+               values_to = "pc") %>%
+  # Plot.
+  ggplot(aes(x = valve_no,
+           y = pc,
+           colour = taxon)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.1, 
+    end = 0.9,
+    labels = c(expression(italic("Ampora pediculus")), 
+               expression(italic("Pseudostaurosira brevistriata")) , 
+               expression(italic("Pantocsekiella ocellata")),
+               expression(paste(italic("Staurosira construens"),
+                                " var. ", 
+                                paste(italic("venter")))),
+               expression(italic("Staurosirella pinnata")),
+               expression(italic("Sellaphora rotunda")))) +
+  labs(
+    title = "Variation in relative abundance of selected taxa as valve count increases",
+    subtitle = "Sample 17 (141.22 m)",
+    colour = "Taxon") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = c(0.97, 0.97),
+    legend.justification = c("right", "top"),
+  )
+```
+
+#### Sample 33
+
+```{r s33taxa, fig.cap="Variation in the percentage relative abundance of selected taxa as the number of valves counted is increased for I-284 core sample 33 (144.42 m)."}
+imported$s_33 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", 
+                     "p_oc_pc", 
+                     "p_brev_pc", 
+                     "s_con_pc", 
+                     "s_pin_pc", 
+                     "a_ped_pc", 
+                     "s_rot_pc"))) %>%
+  pivot_longer(., all_of(c("p_oc_pc", 
+                           "p_brev_pc", 
+                           "s_con_pc", 
+                           "s_pin_pc", 
+                           "a_ped_pc", 
+                           "s_rot_pc")),
+               names_to = "taxon",
+               names_transform = list(taxon = as.factor),
+               values_to = "pc") %>%
+  # Plot.
+  ggplot(aes(x = valve_no,
+             y = pc,
+             colour = taxon)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.1, 
+    end = 0.9,
+    labels = c(expression(italic("Ampora pediculus")), 
+               expression(italic("Pseudostaurosira brevistriata")) , 
+               expression(italic("Pantocsekiella ocellata")),
+               expression(paste(italic("Staurosira construens"),
+                                " var. ", 
+                                paste(italic("venter")))),
+               expression(italic("Staurosirella pinnata")),
+               expression(italic("Sellaphora rotunda")))) +
+  labs(
+    title = "Variation in relative abundance of selected taxa as valve count increases",
+    subtitle = "Sample 33 (144.42 m)",
+    colour = "Taxon") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = c(0.97, 0.5),
+    legend.justification = c("right", "center"),
+  )
+```
+
+#### Sample 529
+
+```{r s529taxa, fig.cap="Variation in the percentage relative abundance of selected taxa as the number of valves counted is increased for I-284 core sample 529 (243.62 m)."}
+imported$s_529 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", 
+                     "p_min_pc", 
+                     "p_oc_pc", 
+                     "s_con_pc", 
+                     "s_pin_pc", 
+                     "a_ped_pc", 
+                     "e_mic_pc"))) %>%
+  pivot_longer(., all_of(c("p_min_pc", 
+                           "p_oc_pc", 
+                           "s_con_pc", 
+                           "s_pin_pc", 
+                           "a_ped_pc", 
+                           "e_mic_pc")),
+               names_to = "taxon",
+               names_transform = list(taxon = as.factor),
+               values_to = "pc") %>%
+  # Plot.
+  ggplot(aes(x = valve_no,
+             y = pc,
+             colour = taxon)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.1, 
+    end = 0.9,
+    labels = c(expression(italic("Ampora pediculus")), 
+               expression(italic("Encyonopsis microcephala")) , 
+               expression(paste(italic("Pantocsekiella"),
+                                " cf. ", 
+                                paste(italic("minuscula")))),
+               expression(italic("Pantocsekiella ocellata")),
+               expression(paste(italic("Staurosira construens"),
+                                " var. ", 
+                                paste(italic("venter")))),
+               expression(italic("Staurosirella pinnata")))) +
+  labs(
+    title = "Variation in relative abundance of selected taxa as valve count increases",
+    subtitle = "Sample 529 (243.62 m)",
+    colour = "Taxon") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") + 
+  theme(
+    legend.position = c(0.97, 0.55),
+    legend.justification = c("right", "center"),    
+  )
+```
+
+
+### 3.1.2 Breakdown of results at 300, 400 and 500 valves counted
+
+A less granular breakdown across numerous samples is displayed on a facet plot 
+(Figure \@ref(fig:facettaxa)). The relatively straight lines of the plots 
+demonstrate that there is little change in the percentages as counting progresses.
+
+```{r facettaxa, fig.height=8, fig.cap="Variation in the percentage relative abundance of selected taxa as the number of valves counted is increased from 300 to 400 to 500 valves for selected I-284 core samples."}
+imported$hundreds_taxa %>%
+  ggplot(aes(x = count,
+             y = pc_ab,
+             colour = taxon)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    labels = c(expression(italic("Amphora pediculus")),
+               expression(italic("Pantocsekiella ocellata")),
+               expression(italic("Staurosirella pinnata"))),
+    begin = 0.1, 
+    end = 0.9) +
+  facet_wrap("sample_no", ncol = 5) +
+  scale_x_continuous(limits = c(300, 500),
+                     breaks = seq(300, 500, 100)) +
+  scale_y_continuous(limits = c(0, 100),
+                     breaks = seq(0, 100, 20)) +
+  labs(
+    title = "Change in relative abundance of selected taxa as count 
+increases across several samples",
+    colour = "Taxon") +
+  xlab("Valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 270)
+  )
+```
+
+For each line on the facet plots, the changes in relative abundance between a 
+count of 300 to 400 valves, a count of 400 to 500 valves and a count of 300 to 
+500 valves have been calculated. The changes are summarised by the statistics 
+below. There is a mean difference in the relative abundances of these taxa of 
+only 1.3 percentage points between a count of 300 valves and a count of 500 
+valves. The largest difference is 4.1 percentage points, which is very small and 
+would probably not change any interpretation that might be made from an analysis 
+of the assemblage. 
+
+```{r}
+dif_300_400 <- with(imported$hundreds_taxa,
+                    abs(pc_ab[count=="400"] - pc_ab[count=="300"]))
+
+dif_400_500 <- with(imported$hundreds_taxa,
+                    abs(pc_ab[count=="500"] - pc_ab[count=="400"]))
+
+dif_300_500 <- with(imported$hundreds_taxa,
+                    abs(pc_ab[count=="500"] - pc_ab[count=="300"]))
+
+differences_taxa <- tibble("300 to 400 valves" = dif_300_400,
+                           "400 to 500 valves" = dif_400_500,
+                           "300 to 500 valves" = dif_300_500)
+
+summary(differences_taxa)
+```
+
+
+
+
+## 3.2 Life mode
+
+The intention is for the results of the diatom analysis to be used to 
+reconstruct the past lake environment with a particular emphasis on lake level 
+change. The variations in the relative abundances of planktonic, facultative 
+planktonic and benthic taxa (i.e. diatom life mode or habitat) are most useful 
+in reconstructing such changes. It was therefore deemed useful to see how these 
+abundances vary as a function of number of valves counted.
+
+
+### 3.2.1 Breakdown of results per valve counted
+
+Figures \@ref(fig:s17lm), \@ref(fig:s33lm) and \@ref(fig:s529lm) show 
+that the relative abundances all stabilise by a count of 250 valves, but that 
+this number also varies between samples. Whilst a count of 250 valves would have 
+been required for sample 17, counts of only 200 and 100 would have been 
+sufficient for samples 33 and 529 respectively.
+
+#### Sample 17
+
+```{r s17lm, fig.cap="Variation in the percentage relative abundance of all diatom taxa grouped by life mode as the number of valves counted is increased for I-284 core sample 17 (141.22 m)."}
+imported$s_17 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", "p_pc", "fp_pc", "b_pc"))) %>%
+  pivot_longer(., all_of(c("p_pc", "fp_pc", "b_pc")),
+             names_to = "life_mode",
+             names_transform = list(life_mode = as.factor),
+             values_to = "pc") %>%
+  # Plot.
+  ggplot(aes(x = valve_no,
+             y = pc,
+             colour = life_mode)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.9, 
+    end = 0.1,
+    labels = c("Benthic", "Faculative Planktonic", "Planktonic"),
+    guide = guide_legend(reverse = TRUE)) +
+  labs(
+    title = "Variation in relative abundance of planktonic, facultative planktonic and benthic 
+diatom taxa as valve count increases",
+    subtitle = "Sample 17 (141.22 m)",
+    colour = "Life Mode") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = c(0.97, 0.97),
+    legend.justification = c("right", "top"),
+  )
+```
+
+#### Sample 33
+
+```{r s33lm, fig.cap="Variation in the percentage relative abundance of all diatom taxa grouped by life mode as the number of valves counted is increased for I-284 core sample 33 (144.42 m)."}
+imported$s_33 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", "p_pc", "fp_pc", "b_pc"))) %>%
+  pivot_longer(., all_of(c("p_pc", "fp_pc", "b_pc")),
+             names_to = "life_mode",
+             names_transform = list(life_mode = as.factor),
+             values_to = "pc") %>%
+  # Plot data.
+  ggplot(aes(x = valve_no,
+             y = pc,
+             colour = life_mode)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.9, 
+    end = 0.1,
+    labels = c("Benthic", "Faculative Planktonic", "Planktonic"),
+    guide = guide_legend(reverse = TRUE)) +
+  labs(
+    title = "Variation in relative abundance of planktonic, facultative planktonic and benthic 
+diatom taxa as valve count increases",
+    subtitle = "Sample 33 (144.42 m)",
+    colour = "Life Mode") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = c(0.97, 0.97),
+    legend.justification = c("right", "top"),
+  )
+```
+
+#### Sample 529
+
+```{r s529lm, fig.cap="Variation in the percentage relative abundance of all diatom taxa grouped by life mode as the number of valves counted is increased for I-284 core sample 529 (243.62 m)."}
+imported$s_529 %>%
+  # Wrangle data to long (tidy) format.
+  select(., all_of(c("valve_no", "p_pc", "fp_pc", "b_pc"))) %>%
+  pivot_longer(., all_of(c("p_pc", "fp_pc", "b_pc")),
+             names_to = "life_mode",
+             names_transform = list(life_mode = as.factor),
+             values_to = "pc") %>%
+  # Plot data.
+  ggplot(aes(x = valve_no,
+             y = pc,
+             colour = life_mode)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.9, 
+    end = 0.1,
+    labels = c("Benthic", "Faculative Planktonic", "Planktonic"),
+    guide = guide_legend(reverse = TRUE)) +
+  labs(
+    title = "Variation in relative abundance of planktonic, facultative planktonic and benthic
+diatom taxa as valve count increases",
+    subtitle = "Sample 529 (243.62 m)",
+    colour = "Life Mode") +
+  xlab("Number of valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = c(0.97, 0.97),
+    legend.justification = c("right", "top"),
+  )
+```
+
+
+### 3.2.2 Breakdown of results at 300, 400 and 500 valves counted
+
+The results of section 3.2.1 demonstrated that a count of 250 valves should be 
+sufficient to obtain an accurate representation of the percentage abundances of 
+diatom taxa grouped by life mode. However, it also showed that the point at 
+which the percentages stabilised varies across samples. It is sensible to check 
+whether the percentages are stable across increasing valve counts in more 
+samples before deciding if a lower count is going to be acceptable. 
+
+A less granular breakdown of counts (at 300, 400 and 500 valves) was carried out 
+on 15 samples throughout the length of the core section. Figure 
+\@ref(fig:facetlm) shows that the percentage relative abundance is very stable 
+across counts of 300, 400 and 500 valves. Relative abundances of planktonic, 
+facultative planktonic and benthic taxa vary by only a few percentage points as 
+the count progresses.
+
+```{r facetlm, fig.height=8, fig.cap="Variation in the percentage relative abundance of all taxa grouped by life mode as the number of valves counted is increased from 300 to 400 to 500 valves for selected I-284 core samples."}
+imported$hundreds_life_mode %>%
+  ggplot(aes(x = count,
+             y = pc_ab,
+             colour = life_mode)) +
+  geom_line() +
+  scale_colour_viridis_d(
+    option = "C",
+    begin = 0.9, 
+    end = 0.1,
+    labels = c("Benthic", "Faculative Planktonic", "Planktonic"),
+    guide = guide_legend(reverse = TRUE)) +
+  facet_wrap("sample_no", ncol = 5) +
+  scale_x_continuous(limits = c(300, 500),
+                     breaks = seq(300, 500, 100)) +
+  scale_y_continuous(limits = c(0, 100),
+                     breaks = seq(0, 100, 20)) +
+  labs(
+    title = "Change in life mode relative abundance as count increases across 
+several samples",
+    colour = "Life Mode") +
+  xlab("Valves counted") +
+  ylab("Relative abundance (%)") +
+  theme(
+    legend.position = "top",
+    axis.text.x = element_text(angle = 270)
+  )
+```
+
+For each line on the facet plots, the changes in relative abundance between a 
+count of 300 to 400 valves, a count of 400 to 500 valves and a count of 300 to 
+500 valves have been calculated. The changes are summarised by the statistics 
+below. These statistics confirm that the relative abundances remain stable as 
+the count progresses. There is a mean change across all variables of only 1.7 
+percentage points as the count is increased from 300 to 500 valves. The maximum 
+change is 4.7 percentage points, which is so small that it would not affect any 
+interpretation of past lake level from the planktonic to benthic ratio.
+
+```{r}
+dif_300_400 <- with(imported$hundreds_life_mode,
+                    abs(pc_ab[count=="400"] - pc_ab[count=="300"]))
+
+dif_400_500 <- with(imported$hundreds_life_mode,
+                    abs(pc_ab[count=="500"] - pc_ab[count=="400"]))
+
+dif_300_500 <- with(imported$hundreds_life_mode,
+                    abs(pc_ab[count=="500"] - pc_ab[count=="300"]))
+
+differences_life_mode <- tibble("300 to 400 valves" = dif_300_400,
+                      "400 to 500 valves" = dif_400_500,
+                      "300 to 500 valves" = dif_300_500)
+
+summary(differences_life_mode)
+```
+
+
+# 4. Conclusion
+
+This document has investigated changes in the percentage relative abundances of 
+selected diatom taxa and changes in the percentage relative abundances of all 
+diatom taxa grouped by life mode as the number of diatom valves counted is 
+increased. It demonstrates that a diatom valve count of 300 valves per sample is 
+sufficient to achieve the aims of the diatom analyses.
+
+The abundances of taxa grouped by life mode stabilise by a count of 250 valves 
+in the three samples investigated in detail. Less granular counts (at 300, 400 
+and 500 valves) of multiple samples also showed little change in the relative 
+abundances of taxa grouped by life mode. These samples were taken from the full 
+length of the core section so probably encapsulate the majority of the diatom 
+assemblage variation to be found in the new diatom record. However, it is still 
+possible that some samples might have an assemblage that requires a higher count 
+so it is best to be cautious and count the minimum 300 valves recommended by 
+[Battarbee (1986)](#references) rather than 250.
+
+
+# References
+
+Battarbee, R. W. (1986) Diatom analysis. In Berglund, B. E. (ed) *Handbook of *
+*Holocene palaeoecology and palaeohydrology*. Chichester: John Wiley & Sons.
+
+Battarbee, R. W., Jones, V. J., Flower, R. J., Cameron, N. G., Bennion, H., 
+Carvalho, L. & Juggins, S. (2001) Diatoms. In Smol, J. P., Birks, H. J. B. & 
+Last, W. M. (eds) *Tracking environmental change using lake sediments, Volume *
+*3: Terrestrial, algal, and siliceous indicators*. Dordrecht: Kluwer Academic 
+Publishers, 155–202.
+
+Jones, T. D. (2010) *A reconstruction of late Pleistocene and Holocene lake *
+*level change at Ioannina, northwest Greece*. PhD thesis. University of Leeds.
+
+Loakes, K. L., (2015) *Late Quaternary Palaeolimnology and Environmental Change *
+*in the South Wollo Highlands, Ethiopia*. PhD thesis. Loughborough University.
+
+Loakes, K. L., Ryves, D. B., Lamb, H. F., Schäbitz, F., Dee, M., Tyler, J. J., 
+Mills, K. & McGowan, S. (2018) *Late Quaternary climate change in the *
+*north-eastern highlands of Ethiopia: a high resolution 15,600 year diatom and *
+*pigment record from Lake Hayk*. Quaternary Science Reviews, 202, 166–181.
+
+Soeprobowati, T. R., Tandjung, S. D., Sutikno, S., Hadissusanto, S., & Gell, P. 
+(2016) *The minimum number of valves for diatom identification in Rawapening *
+*Lake, central Java*. Biotropia, 23, 96–104.
+
+Stevenson, R. J., Pan, Y. & Van Dam,  H. (2010) Assessing environmental 
+conditions in rivers and streams with diatoms. In Smol, J. P. & Stoermer, E. F.  (eds) *The Diatoms: applications for the Environmental and Earth Sciences*, 
+Cambridge: Cambridge University Press, 57–85.
+
+Wilson, G. P., Reed, J. M., Lawson, I. T., Frogley, M. R., Preece, R. C. & 
+Tzedakis, P. C. (2008) *Diatom response to the Last Glacial–Interglacial *
+*Transition in the Ioannina basin, northwest Greece: implications for *
+*Mediterranean palaeoclimate reconstruction*. Quaternary Science Reviews, 27, 
+428–440.
+
+Wilson, G. P., Frogley, M. R., Roucoux, K. H., Jones, T. D., Leng, M. J., 
+Lawson, I. T. & Hughes, P. D. (2013) *Limnetic and terrestrial responses to *
+*climate change during the onset of the penultimate glacial stage in NW Greece*. 
+Global and Planetary Change, 107, 213–225.
+
+Wilson, G. P., Reed, J. M., Frogley, M. R., Hughes, P. D. & Tzedakis, P. C. 
+(2015) *Reconciling diverse lacustrine and terrestrial system response to *
+*penultimate deglacial warming in southern Europe*. Geology, 43(9), 819–822.
+
+Wilson, G. P., Frogley, M. R., Hughes, P. D., Roucoux, K. H., Margari, V., 
+Jones, T. D., Leng, M. J. & Tzedakis, P. C. (2021) *Persistent millennial-scale *
+*climate variability in Southern Europe during Marine Isotope Stage 6*. 
+Quaternary Science Advances, 3, 1–10.
+
+
+
